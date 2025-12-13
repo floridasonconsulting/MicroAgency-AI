@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Save, CreditCard, Server, Globe, Bell, Shield, CheckCircle, Key, Database, Zap } from 'lucide-react';
+import { Save, CreditCard, Server, Globe, Bell, Shield, CheckCircle, Key, Database, Zap, ExternalLink } from 'lucide-react';
 
 interface AgencySettings {
   agencyName: string;
@@ -274,12 +273,17 @@ const Settings: React.FC = () => {
                     </span>
                   </div>
                   <div className="mt-3">
-                    <p className="text-xs font-mono bg-white p-2 border border-slate-200 rounded text-slate-500">
-                        {process.env.API_KEY ? '••••••••••••••••' + process.env.API_KEY.slice(-4) : 'No API Key detected'}
+                    <p className="text-xs font-mono bg-white p-2 border border-slate-200 rounded text-slate-500 overflow-hidden text-ellipsis">
+                        {process.env.API_KEY ? '••••••••••••••••' + process.env.API_KEY.slice(-4) : 'API_KEY not found in environment'}
                     </p>
-                    <p className="text-[10px] text-slate-400 mt-2">
-                        Managed via environment variables (process.env.API_KEY) for security.
-                    </p>
+                    <div className="mt-2 bg-blue-50 text-blue-800 text-xs p-3 rounded-lg border border-blue-100">
+                        <p className="font-bold mb-1">Configuration Required:</p>
+                        <p>This key is managed via environment variables for security.</p>
+                        <ul className="list-disc list-inside mt-2 space-y-1 opacity-90">
+                            <li><strong>Vercel:</strong> Settings &rarr; Environment Variables &rarr; Add <code>API_KEY</code></li>
+                            <li><strong>Local:</strong> Create a <code>.env</code> file with <code>API_KEY=your_key</code></li>
+                        </ul>
+                    </div>
                   </div>
                 </div>
               </div>
