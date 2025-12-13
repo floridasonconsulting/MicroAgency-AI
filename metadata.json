@@ -1,0 +1,7 @@
+{
+  "name": "MicroAgency AI",
+  "description": "The command center for your automated AI lead capture agency.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
