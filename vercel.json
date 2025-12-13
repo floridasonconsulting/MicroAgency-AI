@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm install --legacy-peer-deps",
+  "installCommand": "npm install --force",
   "buildCommand": "vite build",
   "outputDirectory": "dist",
   "framework": "vite"
