@@ -1,21 +1,24 @@
 
 import React, { useState } from 'react';
 import { Client } from '../types';
-import { Search, Filter, ChevronRight, Zap, ExternalLink } from 'lucide-react';
+import { Search, Filter, ChevronRight, Zap, ExternalLink, Plus } from 'lucide-react';
 import { DEMO_CLIENT } from '../constants';
+import AddClientModal from './AddClientModal';
 
 interface ClientListProps {
   clients: Client[];
   onSelectClient: (client: Client) => void;
+  onAddClient?: (client: Client) => void;
 }
 
-const ClientList: React.FC<ClientListProps> = ({ clients, onSelectClient }) => {
+const ClientList: React.FC<ClientListProps> = ({ clients, onSelectClient, onAddClient }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const filteredClients = clients.filter(client => {
-    const matchesSearch = client.businessName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          client.niche.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = client.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.niche.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'All' || client.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -37,19 +40,22 @@ const ClientList: React.FC<ClientListProps> = ({ clients, onSelectClient }) => {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h2 className="text-2xl font-bold text-slate-900">Subscribers</h2>
-            <p className="text-sm text-slate-500">Manage your active revenue sources</p>
+          <h2 className="text-2xl font-bold text-slate-900">Subscribers</h2>
+          <p className="text-sm text-slate-500">Manage your active revenue sources</p>
         </div>
         <div className="flex gap-2">
-            <button 
-                onClick={() => onSelectClient(DEMO_CLIENT)}
-                className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-lg font-medium transition-colors border border-indigo-200 flex items-center gap-2"
-            >
-                <ExternalLink size={18} /> Open Demo Portal
-            </button>
-            <button className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2">
-            <Zap size={18} /> New Subscriber
-            </button>
+          <button
+            onClick={() => onSelectClient(DEMO_CLIENT)}
+            className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-lg font-medium transition-colors border border-indigo-200 flex items-center gap-2"
+          >
+            <ExternalLink size={18} /> Open Demo Portal
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2"
+          >
+            <Plus size={18} /> Add Client
+          </button>
         </div>
       </div>
 
@@ -58,9 +64,9 @@ const ClientList: React.FC<ClientListProps> = ({ clients, onSelectClient }) => {
         <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-4 bg-slate-50/50">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search business name or niche..." 
+            <input
+              type="text"
+              placeholder="Search business name or niche..."
               className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -68,7 +74,7 @@ const ClientList: React.FC<ClientListProps> = ({ clients, onSelectClient }) => {
           </div>
           <div className="flex items-center gap-2">
             <Filter size={18} className="text-slate-400" />
-            <select 
+            <select
               className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 focus:outline-none focus:border-primary-500"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -94,7 +100,7 @@ const ClientList: React.FC<ClientListProps> = ({ clients, onSelectClient }) => {
         <div className="divide-y divide-slate-100">
           {filteredClients.length > 0 ? (
             filteredClients.map((client) => (
-              <div 
+              <div
                 key={client.id}
                 onClick={() => onSelectClient(client)}
                 className="group md:grid grid-cols-12 gap-4 p-4 items-center hover:bg-blue-50/30 transition-colors cursor-pointer"
@@ -112,9 +118,9 @@ const ClientList: React.FC<ClientListProps> = ({ clients, onSelectClient }) => {
 
                 {/* Niche */}
                 <div className="col-span-12 md:col-span-3 mb-2 md:mb-0">
-                   <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-600">
-                     {client.niche}
-                   </span>
+                  <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-600">
+                    {client.niche}
+                  </span>
                 </div>
 
                 {/* Status */}
@@ -142,6 +148,17 @@ const ClientList: React.FC<ClientListProps> = ({ clients, onSelectClient }) => {
           )}
         </div>
       </div>
+
+      {/* Add Client Modal */}
+      {showAddModal && (
+        <AddClientModal
+          onClose={() => setShowAddModal(false)}
+          onAddClient={(client) => {
+            if (onAddClient) onAddClient(client);
+            setShowAddModal(false);
+          }}
+        />
+      )}
     </div>
   );
 };

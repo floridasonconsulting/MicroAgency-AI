@@ -53,6 +53,9 @@ export interface Client {
   // New fields for Number Provisioning
   aiPhoneNumber?: string; // The virtual number (Twilio)
   forwardingStatus?: 'Verified' | 'Pending Setup' | 'Failed';
+  // Stripe fields
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }
 
 export type CampaignStatus = 'Idle' | 'Active' | 'Waiting_Reply' | 'Replied' | 'Converted' | 'Cold';
@@ -68,7 +71,7 @@ export interface Prospect {
   outreachStatus: 'New' | 'Contacted';
   mapUrl?: string;
   notes?: string;
-  
+
   // New Automation Fields
   campaignStatus?: CampaignStatus;
   campaignStep?: string; // e.g. "Email 1 Sent", "SMS 1 Sent"
@@ -81,4 +84,4 @@ export interface AIResponse {
   error?: string;
 }
 
-export type ViewState = 'dashboard' | 'clients' | 'prospector' | 'settings' | 'client-portal';
+export type ViewState = 'dashboard' | 'clients' | 'prospector' | 'settings' | 'client-portal' | 'signup' | 'pricing';
