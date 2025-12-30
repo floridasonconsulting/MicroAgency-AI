@@ -16,22 +16,27 @@ export const getSupabase = (): SupabaseClient | null => {
   const saved = localStorage.getItem('agency_settings');
   let supabaseUrl = '';
   let supabaseKey = '';
-  
+
   if (saved) {
     const settings = JSON.parse(saved);
     supabaseUrl = settings.supabaseUrl || '';
     supabaseKey = settings.supabaseKey || '';
   }
-  
+
   // Fallback to environment variables if localStorage is empty
   if (!supabaseUrl) {
     supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+    console.log('📦 Using env VITE_SUPABASE_URL:', supabaseUrl ? '✓ Found' : '✗ Not set');
   }
   if (!supabaseKey) {
     supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+    console.log('📦 Using env VITE_SUPABASE_ANON_KEY:', supabaseKey ? '✓ Found' : '✗ Not set');
   }
-  
-  if (!supabaseUrl || !supabaseKey) return null;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.log('⚠️ Supabase not configured - running in demo mode');
+    return null;
+  }
 
   // Validate key format - Supabase anon keys are JWTs starting with 'eyJ'
   if (!supabaseKey.startsWith('eyJ')) {
