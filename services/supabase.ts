@@ -9,17 +9,32 @@ let supabaseInstance: SupabaseClient | null = null;
 
 /**
  * Get or create Supabase client instance
- * Reads credentials from localStorage (set in Settings)
+ * Reads credentials from localStorage (set in Settings) or .env fallback
  */
 export const getSupabase = (): SupabaseClient | null => {
+  // First try localStorage (UI-configured settings)
   const saved = localStorage.getItem('agency_settings');
-  if (!saved) return null;
-
-  const settings = JSON.parse(saved);
-  if (!settings.supabaseUrl || !settings.supabaseKey) return null;
+  let supabaseUrl = '';
+  let supabaseKey = '';
+  
+  if (saved) {
+    const settings = JSON.parse(saved);
+    supabaseUrl = settings.supabaseUrl || '';
+    supabaseKey = settings.supabaseKey || '';
+  }
+  
+  // Fallback to environment variables if localStorage is empty
+  if (!supabaseUrl) {
+    supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+  }
+  if (!supabaseKey) {
+    supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  }
+  
+  if (!supabaseUrl || !supabaseKey) return null;
 
   // Validate key format - Supabase anon keys are JWTs starting with 'eyJ'
-  if (!settings.supabaseKey.startsWith('eyJ')) {
+  if (!supabaseKey.startsWith('eyJ')) {
     console.error(
       '❌ Invalid Supabase API Key format. The key should be a JWT starting with "eyJ...".\n' +
       '   Go to Supabase Dashboard > Project Settings > API and copy the "anon public" key.'
@@ -29,7 +44,7 @@ export const getSupabase = (): SupabaseClient | null => {
 
   if (!supabaseInstance) {
     try {
-      supabaseInstance = createClient(settings.supabaseUrl, settings.supabaseKey);
+      supabaseInstance = createClient(supabaseUrl, supabaseKey);
     } catch (err) {
       console.error('Failed to create Supabase client:', err);
       return null;
