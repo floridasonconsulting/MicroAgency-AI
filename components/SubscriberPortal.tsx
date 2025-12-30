@@ -33,7 +33,7 @@ import VoiceDemoModal from './VoiceDemoModal';
 type PortalTab = 'dashboard' | 'calls' | 'sms' | 'calendar' | 'analytics' | 'settings' | 'billing';
 
 interface SubscriberPortalProps {
-    user: AuthUser;
+    user: AuthUser | null;
     client: Client;
     onLogout: () => void;
 }
@@ -123,8 +123,8 @@ const SubscriberPortal: React.FC<SubscriberPortalProps> = ({ user, client, onLog
                             <User size={16} className="text-slate-600" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900 truncate">{user.email}</p>
-                            <p className="text-xs text-slate-500">Owner</p>
+                            <p className="text-sm font-medium text-slate-900 truncate">{user?.email || 'Admin Mode'}</p>
+                            <p className="text-xs text-slate-500">Owner View</p>
                         </div>
                     </div>
                     <button
@@ -323,8 +323,8 @@ const SubscriberPortal: React.FC<SubscriberPortalProps> = ({ user, client, onLog
                         <div key={call.id} className="bg-white rounded-xl border border-slate-200 p-5">
                             <div className="flex items-start gap-4">
                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${call.type === 'missed' ? 'bg-red-100 text-red-600' :
-                                        call.urgency === 'Emergency' ? 'bg-amber-100 text-amber-600' :
-                                            'bg-green-100 text-green-600'
+                                    call.urgency === 'Emergency' ? 'bg-amber-100 text-amber-600' :
+                                        'bg-green-100 text-green-600'
                                     }`}>
                                     {call.type === 'missed' ? <PhoneOutgoing size={20} /> : <PhoneIncoming size={20} />}
                                 </div>
@@ -432,8 +432,8 @@ const SubscriberPortal: React.FC<SubscriberPortalProps> = ({ user, client, onLog
                                 {convo.messages.map((msg, i) => (
                                     <div key={i} className={`flex ${msg.from === 'ai' ? 'justify-end' : 'justify-start'}`}>
                                         <div className={`max-w-[80%] px-3 py-2 rounded-xl text-sm ${msg.from === 'ai'
-                                                ? 'bg-indigo-600 text-white rounded-br-none'
-                                                : 'bg-white border border-slate-200 rounded-bl-none'
+                                            ? 'bg-indigo-600 text-white rounded-br-none'
+                                            : 'bg-white border border-slate-200 rounded-bl-none'
                                             }`}>
                                             <p>{msg.text}</p>
                                             <p className={`text-xs mt-1 ${msg.from === 'ai' ? 'text-indigo-200' : 'text-slate-400'}`}>

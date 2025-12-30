@@ -62,6 +62,15 @@ function App() {
       setActiveView('login');
     }
 
+    // Handle portal direct route (admin walkthrough)
+    if (hash.startsWith('#portal/')) {
+      const clientId = hash.replace('#portal/', '');
+      if (clientId) {
+        setSelectedClientId(clientId);
+        setActiveView('subscriber-portal');
+      }
+    }
+
     // Listen for hash changes
     const handleHashChange = () => {
       const newHash = window.location.hash;
@@ -80,6 +89,15 @@ function App() {
       // Login route
       if (newHash === '#login' || newHash === '#/login') {
         setActiveView('login');
+      }
+
+      // Portal direct route
+      if (newHash.startsWith('#portal/')) {
+        const clientId = newHash.replace('#portal/', '');
+        if (clientId) {
+          setSelectedClientId(clientId);
+          setActiveView('subscriber-portal');
+        }
       }
     };
 
@@ -312,8 +330,8 @@ function App() {
     );
   }
 
-  // Subscriber Portal (full screen, auth-protected)
-  if (activeView === 'subscriber-portal' && authUser && selectedClient) {
+  // Subscriber Portal (full screen, auth-protected or admin walkthrough)
+  if (activeView === 'subscriber-portal' && selectedClient) {
     return (
       <SubscriberPortal
         user={authUser}

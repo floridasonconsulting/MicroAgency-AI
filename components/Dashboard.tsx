@@ -80,14 +80,6 @@ const Dashboard: React.FC<DashboardProps> = ({ clients, usingMockData = false, o
           <p className="text-sm text-slate-500">Your $197/mo empire overview</p>
         </div>
         <div className="flex gap-2">
-          {onViewDemo && (
-            <button
-              onClick={onViewDemo}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-indigo-700 hover:to-purple-700 transition-colors flex items-center gap-2"
-            >
-              <Play size={16} /> Try Demo
-            </button>
-          )}
           <button
             onClick={() => setIsProvisionModalOpen(true)}
             className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors flex items-center gap-2"

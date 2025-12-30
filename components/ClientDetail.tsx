@@ -158,30 +158,16 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateCli
                     <p className="text-sm text-slate-500">{client.niche} • Owned by {client.ownerName}</p>
                 </div>
                 <div className="flex gap-2">
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowPortalMenu(!showPortalMenu)}
-                            className="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center gap-2 shadow-sm"
-                        >
-                            <ExternalLink size={16} /> Client Portal <ChevronDown size={14} />
-                        </button>
-                        {showPortalMenu && (
-                            <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50 min-w-[180px]">
-                                <button
-                                    onClick={() => { setShowDemoMode(true); setShowPortalMenu(false); }}
-                                    className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                                >
-                                    <BarChart3 size={16} /> View Demo Dashboard
-                                </button>
-                                <button
-                                    onClick={() => { setShowAICallSimulator(true); setShowPortalMenu(false); }}
-                                    className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                                >
-                                    <PhoneCall size={16} /> Test AI Receptionist
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                    <button
+                        onClick={() => {
+                            // Open the subscriber portal for this client
+                            // Store the client ID and navigate to portal view
+                            window.open(`${window.location.origin}/#portal/${client.id}`, '_blank');
+                        }}
+                        className="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center gap-2 shadow-sm"
+                    >
+                        <ExternalLink size={16} /> Open Client Portal
+                    </button>
                     <button
                         onClick={() => setIsEditModalOpen(true)}
                         className="bg-white border border-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-2"
