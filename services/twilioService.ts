@@ -263,3 +263,129 @@ export const TWIML_EXAMPLES = {
     </Response>
   `
 };
+
+// ============================================================================
+// APPOINTMENT SMS FUNCTIONS
+// ============================================================================
+
+export interface AppointmentSMSData {
+    customerPhone: string;
+    customerName: string;
+    businessName: string;
+    businessPhone: string;
+    scheduledAt: string;
+    serviceType?: string;
+}
+
+export interface SMSResult {
+    success: boolean;
+    messageSid?: string;
+    error?: string;
+}
+
+/**
+ * Send SMS via Twilio API (or simulate in demo mode)
+ */
+export async function sendSMS(to: string, body: string, from?: string): Promise<SMSResult> {
+    const config = getTwilioConfig();
+
+    if (!config) {
+        console.log('[Twilio SMS] Demo mode - would send:', { to, body });
+        return {
+            success: true,
+            messageSid: `SM_demo_${Date.now()}`
+        };
+    }
+
+    // In production, this would call Twilio API via backend
+    console.log('[Twilio SMS] Would send via API:', { to, body, from });
+
+    // For now, simulate success
+    return {
+        success: true,
+        messageSid: `SM_${Date.now()}`
+    };
+}
+
+/**
+ * Send appointment confirmation SMS to customer
+ */
+export async function sendAppointmentConfirmationSMS(data: AppointmentSMSData): Promise<SMSResult> {
+    const appointmentDate = new Date(data.scheduledAt);
+    const dateStr = appointmentDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+    });
+    const timeStr = appointmentDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+
+    const body = `✅ Appointment Confirmed
+
+Hi ${data.customerName}! Your appointment with ${data.businessName} is set for:
+
+📅 ${dateStr} at ${timeStr}
+${data.serviceType ? `🔧 ${data.serviceType}\n` : ''}
+Need to reschedule? Reply RESCHEDULE or call ${data.businessPhone}
+
+Reply CANCEL to cancel.`;
+
+    return sendSMS(data.customerPhone, body);
+}
+
+/**
+ * Send appointment reminder SMS (24h or 1h)
+ */
+export async function sendAppointmentReminderSMS(
+    data: AppointmentSMSData,
+    reminderType: '24h' | '1h'
+): Promise<SMSResult> {
+    const appointmentDate = new Date(data.scheduledAt);
+    const dateStr = appointmentDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+    });
+    const timeStr = appointmentDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+
+    const timeLabel = reminderType === '24h' ? 'tomorrow' : 'in 1 hour';
+
+    const body = `⏰ Reminder: Your appointment ${timeLabel}
+
+Hi ${data.customerName}! Quick reminder about your appointment with ${data.businessName}:
+
+📅 ${dateStr} at ${timeStr}
+${data.serviceType ? `🔧 ${data.serviceType}\n` : ''}
+See you soon!
+
+Reply RESCHEDULE if you need to change the time.`;
+
+    return sendSMS(data.customerPhone, body);
+}
+
+/**
+ * Handle incoming SMS for appointment management
+ */
+export function parseAppointmentSMSResponse(message: string): 'cancel' | 'reschedule' | 'confirm' | 'unknown' {
+    const normalized = message.toLowerCase().trim();
+
+    if (normalized === 'cancel' || normalized.includes('cancel')) {
+        return 'cancel';
+    }
+    if (normalized === 'reschedule' || normalized.includes('reschedule') || normalized.includes('change')) {
+        return 'reschedule';
+    }
+    if (normalized === 'yes' || normalized === 'confirm' || normalized === 'ok') {
+        return 'confirm';
+    }
+
+    return 'unknown';
+}
+

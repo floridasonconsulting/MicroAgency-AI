@@ -1,19 +1,117 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import ClientList from './components/ClientList';
 import ClientDetail from './components/ClientDetail';
 import LeadFinder from './components/LeadFinder';
 import Settings from './components/Settings';
-import ClientPortal from './components/ClientPortal';
+import SubscriberPortal from './components/SubscriberPortal';
 import ClientSignup from './components/ClientSignup';
 import PricingPage from './components/PricingPage';
+import DemoMode from './components/DemoMode';
+import DemoPortal from './components/DemoPortal';
+import MetricsDashboard from './components/MetricsDashboard';
+import LoginPage from './components/LoginPage';
 import { useClients, useProspects } from './hooks/useData';
 import { Client, ViewState, Prospect } from './types';
+import { OwnerNotification } from './services/communicationHub';
+import { AuthUser, getCurrentUser, onAuthStateChange } from './services/authService';
 
 function App() {
   const [activeView, setActiveView] = useState<ViewState>('dashboard');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [showDemo, setShowDemo] = useState(false);
+  const [showDemoPortal, setShowDemoPortal] = useState(false);
+  const [demoNiche, setDemoNiche] = useState('hvac');
+
+  // Auth state
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Check auth on mount
+  useEffect(() => {
+    getCurrentUser().then(user => {
+      setAuthUser(user);
+      setAuthLoading(false);
+    });
+
+    // Listen for auth changes
+    const { unsubscribe } = onAuthStateChange((user) => {
+      setAuthUser(user);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Check URL for demo portal route (e.g., #demo/hvac)
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith('#demo/')) {
+      const niche = hash.replace('#demo/', '');
+      if (niche) {
+        setDemoNiche(niche);
+        setShowDemoPortal(true);
+      }
+    }
+
+    // Listen for hash changes
+    const handleHashChange = () => {
+      const newHash = window.location.hash;
+      if (newHash.startsWith('#demo/')) {
+        const niche = newHash.replace('#demo/', '');
+        if (niche) {
+          setDemoNiche(niche);
+          setShowDemoPortal(true);
+        }
+      } else if (newHash === '' && showDemoPortal) {
+        setShowDemoPortal(false);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [showDemoPortal]);
+
+  // Notification state
+  const [notifications, setNotifications] = useState<OwnerNotification[]>([
+    // Sample notifications for demo
+    {
+      id: 'notif-1',
+      clientId: 'demo-client',
+      type: 'new_lead',
+      title: 'New Lead Captured',
+      message: 'John Smith called about emergency plumbing - water heater leak',
+      read: false,
+      createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 min ago
+    },
+    {
+      id: 'notif-2',
+      clientId: 'demo-client',
+      type: 'reply',
+      title: 'SMS Reply Received',
+      message: 'Customer replied: "Yes, tomorrow at 2pm works great!"',
+      read: false,
+      createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 min ago
+    },
+    {
+      id: 'notif-3',
+      clientId: 'demo-client',
+      type: 'booking',
+      title: 'Appointment Booked',
+      message: 'Sarah Johnson booked for Dec 28 at 10:00 AM',
+      read: true,
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+    },
+  ]);
+
+  // Notification handlers
+  const handleMarkNotificationRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const handleMarkAllNotificationsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
 
   // Use database-backed hooks with automatic mock data fallback
   const {
@@ -45,7 +143,7 @@ function App() {
   // Navigation handlers
   const handleNavigate = (view: ViewState) => {
     setActiveView(view);
-    if (view !== 'clients' && view !== 'client-portal') {
+    if (view !== 'clients' && view !== 'subscriber-portal') {
       setSelectedClientId(null);
     }
   };
@@ -63,10 +161,7 @@ function App() {
     updateClientInDB(updatedClient.id, updatedClient);
   };
 
-  const handleViewPortal = (client: Client) => {
-    setSelectedClientId(client.id);
-    setActiveView('client-portal');
-  };
+  // handleViewPortal removed - subscribers use SubscriberPortal via login
 
   const handleClosePortal = () => {
     setActiveView('clients');
@@ -94,7 +189,7 @@ function App() {
 
     switch (activeView) {
       case 'dashboard':
-        return <Dashboard clients={clients} usingMockData={usingMockData} />;
+        return <Dashboard clients={clients} usingMockData={usingMockData} onViewDemo={() => setShowDemo(true)} />;
 
       case 'clients':
         if (selectedClient) {
@@ -103,7 +198,6 @@ function App() {
               client={selectedClient}
               onBack={handleBackToDirectory}
               onUpdateClient={handleUpdateClient}
-              onViewPortal={handleViewPortal}
             />
           );
         }
@@ -128,6 +222,9 @@ function App() {
       case 'settings':
         return <Settings />;
 
+      case 'analytics':
+        return <MetricsDashboard clients={clients} />;
+
       case 'signup':
         return (
           <ClientSignup
@@ -150,24 +247,65 @@ function App() {
           />
         );
 
-      case 'client-portal':
-        if (selectedClient) {
-          return <ClientPortal client={selectedClient} onClose={handleClosePortal} />;
-        }
-        return <Dashboard clients={clients} usingMockData={usingMockData} />;
-
       default:
         return <Dashboard clients={clients} usingMockData={usingMockData} />;
     }
   };
 
-  // Full-screen portal view without dashboard layout
-  if (activeView === 'client-portal' && selectedClient) {
-    return <ClientPortal client={selectedClient} onClose={handleClosePortal} />;
+  // Full-screen demo portal (prospect demo)
+  if (showDemoPortal) {
+    return (
+      <DemoPortal
+        niche={demoNiche}
+        onExit={() => {
+          setShowDemoPortal(false);
+          window.location.hash = '';
+        }}
+      />
+    );
+  }
+
+  // Full-screen demo mode (old simulator)
+  if (showDemo) {
+    return <DemoMode niche={demoNiche} onExit={() => setShowDemo(false)} />;
+  }
+
+  // Login page (full screen)
+  if (activeView === 'login') {
+    return (
+      <LoginPage
+        onLoginSuccess={(clientId) => {
+          setSelectedClientId(clientId);
+          setActiveView('subscriber-portal');
+        }}
+        onNavigateToDemo={() => setShowDemo(true)}
+      />
+    );
+  }
+
+  // Subscriber Portal (full screen, auth-protected)
+  if (activeView === 'subscriber-portal' && authUser && selectedClient) {
+    return (
+      <SubscriberPortal
+        user={authUser}
+        client={selectedClient}
+        onLogout={() => {
+          setAuthUser(null);
+          setSelectedClientId(null);
+          setActiveView('dashboard');
+        }}
+      />
+    );
   }
 
   return (
-    <Layout activeView={activeView} onNavigate={handleNavigate}>
+    <Layout
+      activeView={activeView}
+      onNavigate={handleNavigate}
+      notifications={notifications}
+      onMarkNotificationRead={handleMarkNotificationRead}
+      onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
+    >
       {renderContent()}
     </Layout>
   );

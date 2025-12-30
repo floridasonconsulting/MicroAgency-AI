@@ -552,27 +552,43 @@ export const processNumberRequest = async (
  */
 export const triggerMakeWebhook = async (prospect: Prospect): Promise<boolean> => {
   const saved = localStorage.getItem('agency_settings');
-  if (!saved) return false;
-
-  const settings = JSON.parse(saved);
-  if (!settings.makeWebhookUrl) {
-    console.log('No Make.com webhook configured. Skipping automation trigger.');
+  if (!saved) {
+    console.log('[Make.com Webhook] No agency settings found in localStorage. Skipping webhook.');
     return false;
   }
 
+  const settings = JSON.parse(saved);
+  if (!settings.makeWebhookUrl) {
+    console.log('[Make.com Webhook] No webhook URL configured in Settings > Integrations. Skipping automation trigger.');
+    return false;
+  }
+
+  console.log('[Make.com Webhook] Triggering webhook for:', prospect.businessName);
+  console.log('[Make.com Webhook] Webhook URL:', settings.makeWebhookUrl);
+
   try {
-    await fetch(settings.makeWebhookUrl, {
+    const payload = {
+      ...prospect,
+      timestamp: new Date().toISOString(),
+      source: 'MicroAgency_LeadFinder',
+    };
+    console.log('[Make.com Webhook] Payload:', JSON.stringify(payload, null, 2));
+
+    const response = await fetch(settings.makeWebhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...prospect,
-        timestamp: new Date().toISOString(),
-        source: 'MicroAgency_LeadFinder',
-      }),
+      body: JSON.stringify(payload),
     });
+
+    if (response.ok) {
+      console.log('[Make.com Webhook] Successfully sent! Status:', response.status);
+    } else {
+      console.warn('[Make.com Webhook] Response not OK:', response.status, response.statusText);
+    }
+
     return true;
   } catch (error) {
-    console.error('Webhook Trigger Error:', error);
+    console.error('[Make.com Webhook] Error:', error);
     return false;
   }
 };
@@ -655,3 +671,205 @@ function capitalizeFirst(str: string): string {
   if (!str) return str;
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
+// ============================================
+// COMMUNICATION EVENT OPERATIONS
+// ============================================
+
+export interface DbCommunicationEvent {
+  id: string;
+  prospect_id: string | null;
+  client_id: string;
+  customer_id: string | null;
+  direction: 'inbound' | 'outbound';
+  channel: 'email' | 'sms' | 'voice';
+  content: string;
+  subject: string | null;
+  metadata: Record<string, any>;
+  ai_handled: boolean;
+  escalated: boolean;
+  created_at: string;
+}
+
+export interface DbOwnerNotification {
+  id: string;
+  client_id: string;
+  type: 'new_lead' | 'reply' | 'booking' | 'escalation' | 'missed_call';
+  title: string;
+  message: string;
+  read: boolean;
+  action_url: string | null;
+  related_event_id: string | null;
+  created_at: string;
+}
+
+/**
+ * Save a communication event to database
+ */
+export async function saveCommunicationEvent(event: DbCommunicationEvent): Promise<DbCommunicationEvent | null> {
+  const supabase = getSupabase();
+  if (!supabase) {
+    console.log('[Supabase] Not configured - skipping event save');
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('communication_events')
+    .insert([event])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[Supabase] Error saving communication event:', error);
+    return null;
+  }
+
+  return data as DbCommunicationEvent;
+}
+
+/**
+ * Get communication events for a client
+ */
+export async function getClientCommunicationEvents(
+  clientId: string,
+  limit: number = 50
+): Promise<DbCommunicationEvent[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('communication_events')
+    .select('*')
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('[Supabase] Error fetching communication events:', error);
+    return [];
+  }
+
+  return data as DbCommunicationEvent[];
+}
+
+/**
+ * Get conversation history for a specific customer
+ */
+export async function getCustomerConversation(
+  clientId: string,
+  customerId: string
+): Promise<DbCommunicationEvent[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from('communication_events')
+    .select('*')
+    .eq('client_id', clientId)
+    .eq('customer_id', customerId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('[Supabase] Error fetching conversation:', error);
+    return [];
+  }
+
+  return data as DbCommunicationEvent[];
+}
+
+/**
+ * Save an owner notification
+ */
+export async function saveOwnerNotification(notification: DbOwnerNotification): Promise<DbOwnerNotification | null> {
+  const supabase = getSupabase();
+  if (!supabase) {
+    console.log('[Supabase] Not configured - skipping notification save');
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('owner_notifications')
+    .insert([notification])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[Supabase] Error saving notification:', error);
+    return null;
+  }
+
+  return data as DbOwnerNotification;
+}
+
+/**
+ * Get unread notifications for a client
+ */
+export async function getClientNotifications(
+  clientId: string,
+  unreadOnly: boolean = false
+): Promise<DbOwnerNotification[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  let query = supabase
+    .from('owner_notifications')
+    .select('*')
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (unreadOnly) {
+    query = query.eq('read', false);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('[Supabase] Error fetching notifications:', error);
+    return [];
+  }
+
+  return data as DbOwnerNotification[];
+}
+
+/**
+ * Mark a notification as read
+ */
+export async function markNotificationRead(notificationId: string): Promise<boolean> {
+  const supabase = getSupabase();
+  if (!supabase) return false;
+
+  const { error } = await supabase
+    .from('owner_notifications')
+    .update({ read: true })
+    .eq('id', notificationId);
+
+  if (error) {
+    console.error('[Supabase] Error marking notification read:', error);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Mark all notifications as read for a client
+ */
+export async function markAllNotificationsRead(clientId: string): Promise<boolean> {
+  const supabase = getSupabase();
+  if (!supabase) return false;
+
+  const { error } = await supabase
+    .from('owner_notifications')
+    .update({ read: true })
+    .eq('client_id', clientId)
+    .eq('read', false);
+
+  if (error) {
+    console.error('[Supabase] Error marking all notifications read:', error);
+    return false;
+  }
+
+  return true;
+}
+

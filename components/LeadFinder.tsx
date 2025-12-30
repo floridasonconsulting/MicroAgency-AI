@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Globe, Star, AlertCircle, Send, Loader2, Copy, Bookmark, CheckCircle, Trash2, Info, RefreshCw, Mail, Smartphone, Zap, Clock, MousePointerClick, MessageCircle, TrendingUp } from 'lucide-react';
+import { Search, MapPin, Globe, Star, AlertCircle, Send, Loader2, Copy, Bookmark, CheckCircle, Trash2, Info, RefreshCw, Mail, Smartphone, Zap, Clock, MousePointerClick, MessageCircle, TrendingUp, Plus, Eye } from 'lucide-react';
 import { Prospect, CampaignStatus } from '../types';
 import { findProspects, generateOutreachScript, calculateLocalScore, ProspectScore } from '../services/geminiService';
 import { saveProspectToDB, fetchSavedProspects, deleteProspectFromDB, triggerMakeWebhook, updateProspectCampaign } from '../services/supabase';
+import AddProspectModal from './AddProspectModal';
+import ConversationHistory from './ConversationHistory';
 
 interface ProspectCardProps {
   prospect: Prospect;
@@ -13,6 +15,8 @@ interface ProspectCardProps {
   onToggleSave: (p: Prospect) => void;
   onGeneratePitch: (p: Prospect) => void;
   onLaunchCampaign: (p: Prospect) => void;
+  onStopCampaign?: (p: Prospect) => void;
+  onViewConversation?: (p: Prospect) => void;
 }
 
 const ProspectCard: React.FC<ProspectCardProps> = ({
@@ -23,7 +27,9 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
   score,
   onToggleSave,
   onGeneratePitch,
-  onLaunchCampaign
+  onLaunchCampaign,
+  onStopCampaign,
+  onViewConversation
 }) => {
   // Calculate score color
   const scoreColor = score && score >= 70 ? 'text-green-600 bg-green-50 border-green-200'
@@ -70,6 +76,26 @@ const ProspectCard: React.FC<ProspectCardProps> = ({
             )}
           </div>
         </div>
+
+        {/* Stop Campaign Button - only show if active and not converted */}
+        {prospect.campaignStatus === 'Active' && onStopCampaign && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onStopCampaign(prospect); }}
+            className="w-full py-2 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition-colors flex items-center justify-center gap-1 border border-red-200 mb-3"
+          >
+            <span className="text-sm">✕</span> Stop Campaign
+          </button>
+        )}
+
+        {/* View Conversation Button */}
+        {onViewConversation && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onViewConversation(prospect); }}
+            className="w-full py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors flex items-center justify-center gap-1 border border-indigo-200 mb-3"
+          >
+            <Eye size={14} /> View Conversation
+          </button>
+        )}
 
         {/* Current Step Visualizer */}
         <div className="flex items-center justify-between text-xs text-slate-400 border-t border-slate-200 pt-3">
@@ -196,6 +222,9 @@ const LeadFinder: React.FC<LeadFinderProps> = ({
   const [debugMsg, setDebugMsg] = useState('');
   const [prospectScores, setProspectScores] = useState<Map<string, number>>(new Map());
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [showAddProspectModal, setShowAddProspectModal] = useState(false);
+  const [conversationProspect, setConversationProspect] = useState<Prospect | null>(null);
+  const [mockMessages, setMockMessages] = useState<Array<{ id: string; direction: 'inbound' | 'outbound'; channel: 'email' | 'sms' | 'voice'; content: string; aiGenerated: boolean; createdAt: string }>>([]);
 
   // --- INITIAL DATA LOAD ---
   useEffect(() => {
@@ -379,6 +408,38 @@ const LeadFinder: React.FC<LeadFinderProps> = ({
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
+  const handleStopCampaign = (prospect: Prospect) => {
+    const updateFn = (list: Prospect[]) => list.map(p => {
+      if (p.id !== prospect.id) return p;
+      const updated: Prospect = {
+        ...p,
+        campaignStatus: 'Idle',
+        campaignStep: undefined,
+        campaignLogs: [...(p.campaignLogs || []), 'Campaign stopped by user']
+      };
+      saveProspectToDB(updated).catch(() => { });
+      return updated;
+    });
+    setResults(updateFn);
+    setSavedProspects(updateFn);
+    console.log('Campaign stopped for:', prospect.businessName);
+  };
+
+  const handleViewConversation = (prospect: Prospect) => {
+    // Generate mock messages from campaign logs for demo
+    const messages = (prospect.campaignLogs || []).map((log, idx) => ({
+      id: `msg-${prospect.id}-${idx}`,
+      direction: 'outbound' as const,
+      channel: log.toLowerCase().includes('email') ? 'email' as const :
+        log.toLowerCase().includes('sms') ? 'sms' as const : 'email' as const,
+      content: log,
+      aiGenerated: true,
+      createdAt: new Date(Date.now() - (prospect.campaignLogs!.length - idx) * 3600000).toISOString()
+    }));
+    setMockMessages(messages);
+    setConversationProspect(prospect);
+  };
+
   const handleSendSMS = () => {
     if (!generatedPitch) return;
     window.open(`sms:?&body=${encodeURIComponent(generatedPitch)}`);
@@ -401,6 +462,8 @@ const LeadFinder: React.FC<LeadFinderProps> = ({
         onToggleSave={toggleSaveProspect}
         onGeneratePitch={handleGeneratePitch}
         onLaunchCampaign={handleLaunchCampaign}
+        onStopCampaign={handleStopCampaign}
+        onViewConversation={handleViewConversation}
       />
     ));
   };
@@ -417,203 +480,258 @@ const LeadFinder: React.FC<LeadFinderProps> = ({
             <p className="text-sm text-slate-500">Find businesses with missing websites or bad response times.</p>
           </div>
 
-          <div className="flex bg-slate-100 p-1 rounded-lg self-start">
+          <div className="flex items-center gap-3">
+            {/* Add Prospect Button */}
             <button
-              onClick={() => setActiveTab('search')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'search' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              onClick={() => setShowAddProspectModal(true)}
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg font-medium text-sm flex items-center gap-1 shadow-sm transition-colors"
             >
-              Find New
+              <Plus size={16} /> Add Prospect
             </button>
-            <button
-              onClick={() => setActiveTab('saved')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${activeTab === 'saved' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              Saved List
-              {savedProspects.length > 0 && <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full text-[10px]">{savedProspects.length}</span>}
-            </button>
-          </div>
-        </div>
 
-        {/* Search Bar */}
-        {activeTab === 'search' && (
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-            <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Target Niche</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Plumbers, Roofers"
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  value={niche}
-                  onChange={(e) => setNiche(e.target.value)}
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Location</label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-2.5 text-slate-400" size={18} />
+            <div className="flex bg-slate-100 p-1 rounded-lg self-start">
+              <button
+                onClick={() => setActiveTab('search')}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'search' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Find New
+              </button>
+              <button
+                onClick={() => setActiveTab('saved')}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${activeTab === 'saved' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Saved List
+                {savedProspects.length > 0 && <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full text-[10px]">{savedProspects.length}</span>}
+              </button>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          {activeTab === 'search' && (
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+              <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Target Niche</label>
                   <input
                     type="text"
-                    placeholder="Zip Code or City, State"
-                    className="w-full border border-slate-300 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="e.g. Plumbers, Roofers"
+                    className="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    value={niche}
+                    onChange={(e) => setNiche(e.target.value)}
                   />
                 </div>
-              </div>
-              <div className="flex items-end">
-                <button
-                  type="submit"
-                  disabled={isLoading || !niche || !location}
-                  className="w-full md:w-auto bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Search size={20} />}
-                  {isLoading ? 'Scanning Maps...' : 'Find Leads'}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-      </div>
-
-      {/* Main Content - No nested scrolling constraints */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
-
-        {/* Results Column - Flexible height, no fixed height */}
-        <div className="flex-1 w-full bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col">
-          <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
-            <h3 className="font-bold text-slate-700 flex items-center gap-2">
-              {activeTab === 'search' ? 'Discovered Prospects' : 'Saved Prospects'}
-              {activeTab === 'search' && (
-                <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-xs">
-                  {results.length} found
-                </span>
-              )}
-            </h3>
-            {activeTab === 'saved' && (
-              <button
-                onClick={() => setSavedProspects([])}
-                className="text-xs text-red-400 hover:text-red-600 hover:underline"
-                disabled={savedProspects.length === 0}
-              >
-                Clear List
-              </button>
-            )}
-          </div>
-
-          <div className="p-4 bg-slate-50/50 min-h-[200px]">
-            {/* Loading State */}
-            {activeTab === 'search' && isLoading && (
-              <div className="text-center py-12 flex flex-col items-center">
-                <Loader2 className="animate-spin text-indigo-500 mb-4" size={40} />
-                <p className="text-slate-600 font-medium">AI is scanning Google Maps...</p>
-                <p className="text-xs text-slate-400 mt-2">Analyzing websites and reviews for {niche}</p>
-              </div>
-            )}
-
-            {/* Empty State: Initial */}
-            {activeTab === 'search' && !isLoading && !hasSearched && results.length === 0 && (
-              <div className="text-center py-16 text-slate-400 border-2 border-dashed border-slate-200 rounded-xl m-4">
-                <Search className="mx-auto mb-4 opacity-20" size={48} />
-                <p className="font-medium">Ready to prospect</p>
-                <p className="text-sm">Enter a niche and location to begin.</p>
-              </div>
-            )}
-
-            {/* Empty State: No Results */}
-            {activeTab === 'search' && !isLoading && hasSearched && results.length === 0 && (
-              <div className="text-center py-12 bg-white border border-slate-200 rounded-xl shadow-sm m-4">
-                <Info className="mx-auto mb-3 text-amber-500" size={32} />
-                <p className="font-bold text-slate-800">No prospects found</p>
-                <p className="text-sm text-slate-500 mt-1 max-w-xs mx-auto">
-                  We couldn't find any businesses matching your criteria. Try a larger city or broader niche.
-                </p>
-                <div className="text-xs text-slate-400 mt-4 font-mono">
-                  Debug: {debugMsg}
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Location</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                    <input
+                      type="text"
+                      placeholder="Zip Code or City, State"
+                      className="w-full border border-slate-300 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* Empty State: Saved */}
-            {activeTab === 'saved' && savedProspects.length === 0 && (
-              <div className="text-center py-16 text-slate-400 border-2 border-dashed border-slate-200 rounded-xl m-4">
-                <Bookmark className="mx-auto mb-4 opacity-20" size={48} />
-                <p>No saved prospects yet.</p>
-                <button onClick={() => setActiveTab('search')} className="text-indigo-500 text-sm font-medium hover:underline mt-2">
-                  Go find some!
-                </button>
-              </div>
-            )}
-
-            {/* THE LIST */}
-            <div className="space-y-3">
-              {renderList()}
-            </div>
-          </div>
-        </div>
-
-        {/* Pitch Generator Sidebar - Sticky */}
-        <div className="w-full lg:w-96 bg-slate-900 text-white rounded-xl shadow-lg flex flex-col p-6 shrink-0 lg:sticky lg:top-4 h-fit">
-          <div className="mb-6 shrink-0">
-            <h3 className="text-xl font-bold bg-gradient-to-r from-primary-400 to-indigo-400 bg-clip-text text-transparent">Pitch Architect</h3>
-            <p className="text-slate-400 text-sm mt-1">
-              {selectedProspect
-                ? `Drafting for ${selectedProspect.businessName}...`
-                : "Select a prospect to generate a custom outreach message."}
-            </p>
-          </div>
-
-          <div className="flex-1 bg-slate-800 rounded-lg p-4 relative border border-slate-700 min-h-[300px]">
-            {isPitchLoading ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="animate-spin text-indigo-400" size={32} />
-              </div>
-            ) : generatedPitch ? (
-              <>
-                <textarea
-                  className="w-full h-full bg-transparent text-slate-200 text-sm font-mono resize-none focus:outline-none min-h-[200px]"
-                  value={generatedPitch}
-                  readOnly
-                />
-                <button
-                  onClick={() => navigator.clipboard.writeText(generatedPitch)}
-                  className="absolute bottom-4 right-4 bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-full shadow-lg transition-colors"
-                  title="Copy to Clipboard"
-                >
-                  <Copy size={18} />
-                </button>
-              </>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-slate-600 text-sm text-center px-4 space-y-4 py-12">
-                <RefreshCw size={32} className="opacity-20" />
-                <p>AI will analyze the prospect's weaknesses (no website, bad reviews) and write a perfect hook.</p>
-              </div>
-            )}
-          </div>
-
-          {/* ACTIONS */}
-          {generatedPitch && !isPitchLoading && (
-            <div className="mt-4 grid grid-cols-2 gap-3 shrink-0">
-              <button
-                onClick={handleSendSMS}
-                className="bg-slate-800 hover:bg-slate-700 text-white py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
-              >
-                <Smartphone size={14} /> Send SMS
-              </button>
-              <button
-                onClick={handleSendEmail}
-                className="bg-slate-800 hover:bg-slate-700 text-white py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
-              >
-                <Mail size={14} /> Send Email
-              </button>
+                <div className="flex items-end">
+                  <button
+                    type="submit"
+                    disabled={isLoading || !niche || !location}
+                    className="w-full md:w-auto bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Search size={20} />}
+                    {isLoading ? 'Scanning Maps...' : 'Find Leads'}
+                  </button>
+                </div>
+              </form>
             </div>
           )}
+        </div>
 
-          <div className="mt-4 text-xs text-slate-500 text-center shrink-0">
-            Tip: Sending a video of yourself auditing their missing website converts 3x higher.
+        {/* Main Content - No nested scrolling constraints */}
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+
+          {/* Results Column - Flexible height, no fixed height */}
+          <div className="flex-1 w-full bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col">
+            <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
+              <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                {activeTab === 'search' ? 'Discovered Prospects' : 'Saved Prospects'}
+                {activeTab === 'search' && (
+                  <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-xs">
+                    {results.length} found
+                  </span>
+                )}
+              </h3>
+              {activeTab === 'saved' && (
+                <button
+                  onClick={() => setSavedProspects([])}
+                  className="text-xs text-red-400 hover:text-red-600 hover:underline"
+                  disabled={savedProspects.length === 0}
+                >
+                  Clear List
+                </button>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50/50 min-h-[200px]">
+              {/* Loading State */}
+              {activeTab === 'search' && isLoading && (
+                <div className="text-center py-12 flex flex-col items-center">
+                  <Loader2 className="animate-spin text-indigo-500 mb-4" size={40} />
+                  <p className="text-slate-600 font-medium">AI is scanning Google Maps...</p>
+                  <p className="text-xs text-slate-400 mt-2">Analyzing websites and reviews for {niche}</p>
+                </div>
+              )}
+
+              {/* Empty State: Initial */}
+              {activeTab === 'search' && !isLoading && !hasSearched && results.length === 0 && (
+                <div className="text-center py-16 text-slate-400 border-2 border-dashed border-slate-200 rounded-xl m-4">
+                  <Search className="mx-auto mb-4 opacity-20" size={48} />
+                  <p className="font-medium">Ready to prospect</p>
+                  <p className="text-sm">Enter a niche and location to begin.</p>
+                </div>
+              )}
+
+              {/* Empty State: No Results */}
+              {activeTab === 'search' && !isLoading && hasSearched && results.length === 0 && (
+                <div className="text-center py-12 bg-white border border-slate-200 rounded-xl shadow-sm m-4">
+                  <Info className="mx-auto mb-3 text-amber-500" size={32} />
+                  <p className="font-bold text-slate-800">No prospects found</p>
+                  <p className="text-sm text-slate-500 mt-1 max-w-xs mx-auto">
+                    We couldn't find any businesses matching your criteria. Try a larger city or broader niche.
+                  </p>
+                  <div className="text-xs text-slate-400 mt-4 font-mono">
+                    Debug: {debugMsg}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty State: Saved */}
+              {activeTab === 'saved' && savedProspects.length === 0 && (
+                <div className="text-center py-16 text-slate-400 border-2 border-dashed border-slate-200 rounded-xl m-4">
+                  <Bookmark className="mx-auto mb-4 opacity-20" size={48} />
+                  <p>No saved prospects yet.</p>
+                  <button onClick={() => setActiveTab('search')} className="text-indigo-500 text-sm font-medium hover:underline mt-2">
+                    Go find some!
+                  </button>
+                </div>
+              )}
+
+              {/* THE LIST */}
+              <div className="space-y-3">
+                {renderList()}
+              </div>
+            </div>
+          </div>
+
+          {/* Pitch Generator Sidebar - Sticky */}
+          <div className="w-full lg:w-96 bg-slate-900 text-white rounded-xl shadow-lg flex flex-col p-6 shrink-0 lg:sticky lg:top-4 h-fit">
+            <div className="mb-6 shrink-0">
+              <h3 className="text-xl font-bold bg-gradient-to-r from-primary-400 to-indigo-400 bg-clip-text text-transparent">Pitch Architect</h3>
+              <p className="text-slate-400 text-sm mt-1">
+                {selectedProspect
+                  ? `Drafting for ${selectedProspect.businessName}...`
+                  : "Select a prospect to generate a custom outreach message."}
+              </p>
+            </div>
+
+            <div className="flex-1 bg-slate-800 rounded-lg p-4 relative border border-slate-700 min-h-[300px]">
+              {isPitchLoading ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="animate-spin text-indigo-400" size={32} />
+                </div>
+              ) : generatedPitch ? (
+                <>
+                  <textarea
+                    className="w-full h-full bg-transparent text-slate-200 text-sm font-mono resize-none focus:outline-none min-h-[200px]"
+                    value={generatedPitch}
+                    readOnly
+                  />
+                  <button
+                    onClick={() => navigator.clipboard.writeText(generatedPitch)}
+                    className="absolute bottom-4 right-4 bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-full shadow-lg transition-colors"
+                    title="Copy to Clipboard"
+                  >
+                    <Copy size={18} />
+                  </button>
+                </>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-slate-600 text-sm text-center px-4 space-y-4 py-12">
+                  <RefreshCw size={32} className="opacity-20" />
+                  <p>AI will analyze the prospect's weaknesses (no website, bad reviews) and write a perfect hook.</p>
+                </div>
+              )}
+            </div>
+
+            {/* ACTIONS */}
+            {generatedPitch && !isPitchLoading && (
+              <div className="mt-4 grid grid-cols-2 gap-3 shrink-0">
+                <button
+                  onClick={handleSendSMS}
+                  className="bg-slate-800 hover:bg-slate-700 text-white py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
+                >
+                  <Smartphone size={14} /> Send SMS
+                </button>
+                <button
+                  onClick={handleSendEmail}
+                  className="bg-slate-800 hover:bg-slate-700 text-white py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-slate-700"
+                >
+                  <Mail size={14} /> Send Email
+                </button>
+              </div>
+            )}
+
+            <div className="mt-4 text-xs text-slate-500 text-center shrink-0">
+              Tip: Sending a video of yourself auditing their missing website converts 3x higher.
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Add Prospect Modal */}
+      {showAddProspectModal && (
+        <AddProspectModal
+          onClose={() => setShowAddProspectModal(false)}
+          onAddProspect={(prospect, launchCampaign) => {
+            // First add to saved prospects (without Active status, we'll set it via handleLaunchCampaign)
+            const prospectToAdd = { ...prospect, campaignStatus: 'Idle' as CampaignStatus };
+            setSavedProspects(prev => [...prev, prospectToAdd]);
+            setResults(prev => [...prev, prospectToAdd]);
+
+            // If campaign should launch, trigger the full campaign flow
+            if (launchCampaign) {
+              // Use setTimeout to ensure state is updated first
+              setTimeout(() => {
+                handleLaunchCampaign(prospectToAdd);
+              }, 100);
+            }
+            setShowAddProspectModal(false);
+          }}
+        />
+      )}
+
+      {/* Conversation History Modal */}
+      {conversationProspect && (
+        <ConversationHistory
+          prospectId={conversationProspect.id}
+          prospectName={conversationProspect.businessName}
+          messages={mockMessages}
+          onClose={() => setConversationProspect(null)}
+          onSendReply={(message, channel) => {
+            // Add reply to messages
+            const newMessage = {
+              id: `msg-${Date.now()}`,
+              direction: 'outbound' as const,
+              channel,
+              content: message,
+              aiGenerated: false,
+              createdAt: new Date().toISOString()
+            };
+            setMockMessages(prev => [...prev, newMessage]);
+            console.log(`[Campaign] Sending ${channel}: ${message}`);
+          }}
+        />
+      )}
     </div>
   );
 };

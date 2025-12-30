@@ -63,6 +63,8 @@ export type CampaignStatus = 'Idle' | 'Active' | 'Waiting_Reply' | 'Replied' | '
 export interface Prospect {
   id: string;
   businessName: string;
+  email?: string;
+  phone?: string;
   address: string;
   rating: number;
   reviewCount: number;
@@ -84,4 +86,4 @@ export interface AIResponse {
   error?: string;
 }
 
-export type ViewState = 'dashboard' | 'clients' | 'prospector' | 'settings' | 'client-portal' | 'signup' | 'pricing';
+export type ViewState = 'dashboard' | 'clients' | 'prospector' | 'analytics' | 'settings' | 'subscriber-portal' | 'signup' | 'pricing' | 'login';

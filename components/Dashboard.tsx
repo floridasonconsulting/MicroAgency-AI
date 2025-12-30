@@ -5,15 +5,16 @@ import {
   AreaChart, Area
 } from 'recharts';
 import { Client } from '../types';
-import { TrendingUp, DollarSign, Users, MessageSquare, Phone, Check, X, Smartphone, ArrowRight } from 'lucide-react';
+import { TrendingUp, DollarSign, Users, MessageSquare, Phone, Check, X, Smartphone, ArrowRight, Play } from 'lucide-react';
 import AdminApprovalQueue from './AdminApprovalQueue';
 
 interface DashboardProps {
   clients: Client[];
   usingMockData?: boolean;
+  onViewDemo?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ clients, usingMockData = false }) => {
+const Dashboard: React.FC<DashboardProps> = ({ clients, usingMockData = false, onViewDemo }) => {
   // Modal State
   const [isProvisionModalOpen, setIsProvisionModalOpen] = useState(false);
   const [provisionStep, setProvisionStep] = useState(1);
@@ -78,12 +79,22 @@ const Dashboard: React.FC<DashboardProps> = ({ clients, usingMockData = false })
           <h2 className="text-2xl font-bold text-slate-900">Agency Command Center</h2>
           <p className="text-sm text-slate-500">Your $197/mo empire overview</p>
         </div>
-        <button
-          onClick={() => setIsProvisionModalOpen(true)}
-          className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors flex items-center gap-2"
-        >
-          <Phone size={16} /> + Provision New Number
-        </button>
+        <div className="flex gap-2">
+          {onViewDemo && (
+            <button
+              onClick={onViewDemo}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-indigo-700 hover:to-purple-700 transition-colors flex items-center gap-2"
+            >
+              <Play size={16} /> Try Demo
+            </button>
+          )}
+          <button
+            onClick={() => setIsProvisionModalOpen(true)}
+            className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors flex items-center gap-2"
+          >
+            <Phone size={16} /> + Provision New Number
+          </button>
+        </div>
       </div>
 
       {/* Mock Data Warning Banner */}

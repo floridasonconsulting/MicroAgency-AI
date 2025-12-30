@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets and config files
+.env
+.env.local
+.env.*.local
+*.secret
+*secrets*
+MicroAgencyAI*.json

@@ -1,19 +1,20 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Client, Message, Lead } from '../types';
-import { ArrowLeft, MessageSquare, Settings, Users, Play, Send, Bot, Smartphone, Copy, Check, X, Calendar, Phone, Activity, Mic, Volume2, Edit, Trash2, Save, ExternalLink, Plus } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Settings, Users, Play, Send, Bot, Smartphone, Copy, Check, X, Calendar, Phone, Activity, Mic, Volume2, Edit, Trash2, Save, ExternalLink, Plus, BarChart3, PhoneCall, ChevronDown } from 'lucide-react';
 import { simulateAutoResponder, generateOutreachScript } from '../services/geminiService';
 import AddLeadModal from './AddLeadModal';
+import DemoMode from './DemoMode';
+import AICallSimulator from './AICallSimulator';
 
 interface ClientDetailProps {
     client: Client;
     onBack: () => void;
     onUpdateClient: (client: Client) => void;
-    onViewPortal: (client: Client) => void;
 }
 
-const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateClient, onViewPortal }) => {
-    const [activeTab, setActiveTab] = useState<'leads' | 'simulator' | 'config' | 'growth'>('simulator');
+const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateClient }) => {
+    // Admin view: simulator for testing, leads for overview, config for settings, growth for outreach
+    const [activeTab, setActiveTab] = useState<'leads' | 'simulator' | 'config' | 'growth'>('leads');
 
     // Local Leads State to handle manual updates
     const [localLeads, setLocalLeads] = useState(client.leads);
@@ -29,6 +30,11 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateCli
 
     // Add Lead Modal State
     const [showAddLeadModal, setShowAddLeadModal] = useState(false);
+
+    // Demo Mode and AI Call Simulator State
+    const [showDemoMode, setShowDemoMode] = useState(false);
+    const [showAICallSimulator, setShowAICallSimulator] = useState(false);
+    const [showPortalMenu, setShowPortalMenu] = useState(false);
 
     // Sync leads & config when client prop changes (e.g. navigation)
     useEffect(() => {
@@ -152,12 +158,30 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateCli
                     <p className="text-sm text-slate-500">{client.niche} • Owned by {client.ownerName}</p>
                 </div>
                 <div className="flex gap-2">
-                    <button
-                        onClick={() => onViewPortal(client)}
-                        className="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center gap-2 shadow-sm"
-                    >
-                        <ExternalLink size={16} /> View Client Portal
-                    </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowPortalMenu(!showPortalMenu)}
+                            className="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center gap-2 shadow-sm"
+                        >
+                            <ExternalLink size={16} /> Client Portal <ChevronDown size={14} />
+                        </button>
+                        {showPortalMenu && (
+                            <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50 min-w-[180px]">
+                                <button
+                                    onClick={() => { setShowDemoMode(true); setShowPortalMenu(false); }}
+                                    className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                >
+                                    <BarChart3 size={16} /> View Demo Dashboard
+                                </button>
+                                <button
+                                    onClick={() => { setShowAICallSimulator(true); setShowPortalMenu(false); }}
+                                    className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                >
+                                    <PhoneCall size={16} /> Test AI Receptionist
+                                </button>
+                            </div>
+                        )}
+                    </div>
                     <button
                         onClick={() => setIsEditModalOpen(true)}
                         className="bg-white border border-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-2"
@@ -444,8 +468,8 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateCli
                                                             key={voice}
                                                             onClick={() => handleConfigChange('voiceId', voice.toLowerCase())}
                                                             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border ${config.voiceId === voice.toLowerCase()
-                                                                    ? 'border-indigo-500 bg-white text-indigo-700 ring-1 ring-indigo-500'
-                                                                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                                                                ? 'border-indigo-500 bg-white text-indigo-700 ring-1 ring-indigo-500'
+                                                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                                                                 }`}
                                                         >
                                                             <Volume2 size={14} />
@@ -666,6 +690,50 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateCli
                         onUpdateClient({ ...client, leads: updatedLeads });
                         setShowAddLeadModal(false);
                     }}
+                />
+            )}
+
+            {/* Demo Mode */}
+            {showDemoMode && (
+                <DemoMode
+                    niche={client.niche.toLowerCase()}
+                    onExit={() => setShowDemoMode(false)}
+                />
+            )}
+
+            {/* AI Call Simulator */}
+            {showAICallSimulator && (
+                <AICallSimulator
+                    clientContext={{
+                        businessName: client.businessName,
+                        niche: client.niche,
+                        greeting: client.config.customGreeting || `Thanks for calling ${client.businessName}. How can I help you today?`,
+                        services: [client.niche, 'General Inquiry', 'Emergency Service'],
+                    }}
+                    onClose={() => setShowAICallSimulator(false)}
+                    onLeadCaptured={(lead) => {
+                        const newLead: Lead = {
+                            id: `lead_${Date.now()}`,
+                            name: lead.name,
+                            phone: lead.phone,
+                            serviceType: 'AI Call Inquiry',
+                            urgency: 'Medium',
+                            status: 'New',
+                            dateCaptured: new Date().toISOString().split('T')[0],
+                            conversationHistory: [{ role: 'system', content: lead.notes, timestamp: new Date().toISOString() }]
+                        };
+                        const updatedLeads = [...localLeads, newLead];
+                        setLocalLeads(updatedLeads);
+                        onUpdateClient({ ...client, leads: updatedLeads });
+                    }}
+                />
+            )}
+
+            {/* Click outside to close portal menu */}
+            {showPortalMenu && (
+                <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowPortalMenu(false)}
                 />
             )}
         </div>

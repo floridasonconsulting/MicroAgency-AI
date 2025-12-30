@@ -1,0 +1,123 @@
+{
+  "niche": {
+    "id": "hvac_small_business",
+    "display_name": "Small HVAC Companies",
+    "target_company_size": "1-25 employees",
+    "service_area": "local",
+    "decision_maker": "owner",
+    "urgency_level": "high",
+    "seasonality": ["summer", "winter"],
+    "average_job_value_usd": {
+      "min": 300,
+      "max": 15000
+    },
+    "primary_pain_points": [
+      "missed_calls",
+      "after_hours_emergencies",
+      "slow_lead_response",
+      "owner_overload"
+    ]
+  },
+
+  "ai_receptionist": {
+    "role": "HVAC virtual receptionist",
+    "system_prompt": "You are a professional HVAC company receptionist. Your job is to answer calls and texts immediately, calm urgent customers, gather critical information, qualify the lead, and escalate only real emergencies to the business owner. You must sound calm, confident, professional, and helpful at all times. Speed and clarity are critical.",
+    "tone": "calm_confident_reassuring",
+    "answer_speed": "immediate",
+    "goals": [
+      "capture_and_qualify_lead",
+      "reduce_owner_interruptions",
+      "preserve_revenue_from_missed_calls"
+    ]
+  },
+
+  "qualification_flow": [
+    {
+      "field": "service_type",
+      "question": "Are you calling about air conditioning or heating?",
+      "options": ["Air Conditioning", "Heating", "Both"]
+    },
+    {
+      "field": "system_status",
+      "question": "Is your system completely down or still running?",
+      "options": ["Not working at all", "Running but not working well"]
+    },
+    {
+      "field": "urgency",
+      "question": "Is this an emergency that needs service today?",
+      "options": ["Yes", "No"]
+    },
+    {
+      "field": "location_city",
+      "question": "What city are you located in?"
+    },
+    {
+      "field": "callback_number",
+      "question": "What is the best phone number to reach you?"
+    }
+  ],
+
+  "escalation_rules": {
+    "trigger_conditions": [
+      {
+        "field": "urgency",
+        "value": "Yes"
+      },
+      {
+        "field": "system_status",
+        "value": "Not working at all"
+      }
+    ],
+    "notify_owner_via": ["sms", "dashboard"],
+    "owner_alert_template": "🔥 EMERGENCY HVAC LEAD\nService: {{service_type}}\nStatus: {{system_status}}\nUrgent: {{urgency}}\nCity: {{location_city}}\nPhone: {{callback_number}}"
+  },
+
+  "outreach": {
+    "lead_finder_filters": {
+      "industry_keywords": [
+        "HVAC",
+        "Heating and Air",
+        "AC Repair",
+        "Air Conditioning"
+      ],
+      "exclude_keywords": [
+        "franchise",
+        "corporate",
+        "national"
+      ],
+      "business_size": "small",
+      "location_scope": "local"
+    },
+    "messages": {
+      "initial": "Quick question — what usually happens when someone calls your HVAC business after hours and no one answers?",
+      "follow_up": "We built an AI receptionist that answers HVAC calls 24/7, texts missed callers instantly, and alerts you only when it’s an emergency. It’s already live — no setup calls. Want the activation link?",
+      "close": "Here’s the activation page: {{activation_link}}. Once you sign up, your AI receptionist is live the same day."
+    }
+  },
+
+  "pricing": {
+    "solo_hvac_plan": {
+      "price_usd_monthly": 247,
+      "features": [
+        "24/7 AI receptionist (calls + SMS)",
+        "Emergency lead escalation",
+        "Owner notifications",
+        "Call & text analytics dashboard"
+      ]
+    }
+  },
+
+  "retention": {
+    "monthly_value_message": "Your AI receptionist handled {{call_count}} HVAC calls and {{text_count}} texts this month. Emergency leads were flagged instantly. Reply UPGRADE if you want additional features."
+  },
+
+  "referral": {
+    "message": "If you know another HVAC owner missing calls after hours, we’ll take $50 off your next month for referrals. Just intro us via text."
+  },
+
+  "agency_expansion": {
+    "enabled": true,
+    "positioning": "White-label AI receptionist for HVAC marketing agencies",
+    "suggested_pricing_usd_monthly": [997, 1997]
+  }
+}
