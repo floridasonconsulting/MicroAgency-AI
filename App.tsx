@@ -43,9 +43,11 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // Check URL for demo portal route (e.g., #demo/hvac)
+  // Check URL for demo portal route (e.g., #demo/hvac) or login route (#login)
   useEffect(() => {
     const hash = window.location.hash;
+
+    // Handle demo portal route
     if (hash.startsWith('#demo/')) {
       const niche = hash.replace('#demo/', '');
       if (niche) {
@@ -54,9 +56,16 @@ function App() {
       }
     }
 
+    // Handle login route
+    if (hash === '#login' || hash === '#/login') {
+      setActiveView('login');
+    }
+
     // Listen for hash changes
     const handleHashChange = () => {
       const newHash = window.location.hash;
+
+      // Demo portal routes
       if (newHash.startsWith('#demo/')) {
         const niche = newHash.replace('#demo/', '');
         if (niche) {
@@ -65,6 +74,11 @@ function App() {
         }
       } else if (newHash === '' && showDemoPortal) {
         setShowDemoPortal(false);
+      }
+
+      // Login route
+      if (newHash === '#login' || newHash === '#/login') {
+        setActiveView('login');
       }
     };
 
