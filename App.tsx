@@ -28,6 +28,7 @@ function App() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
+
   // Check auth on mount
   useEffect(() => {
     getCurrentUser().then(user => {
@@ -140,6 +141,20 @@ function App() {
   const selectedClient = selectedClientId
     ? clients.find(c => c.id === selectedClientId) || null
     : null;
+
+  // Handle /portal path redirect after magic link authentication
+  useEffect(() => {
+    if (authUser && clients.length > 0 && window.location.pathname === '/portal') {
+      // Find the client for this user based on email
+      const matchingClient = clients.find(c => c.email === authUser.email);
+      if (matchingClient) {
+        setSelectedClientId(matchingClient.id);
+        setActiveView('subscriber-portal');
+      }
+      // Clear the /portal path to avoid URL confusion
+      window.history.replaceState({}, '', '/');
+    }
+  }, [authUser, clients]);
 
   // Prospect management with database persistence
   const {
