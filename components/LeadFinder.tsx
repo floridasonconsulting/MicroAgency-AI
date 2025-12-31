@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Globe, Star, AlertCircle, Send, Loader2, Copy, Bookmark, CheckCircle, Trash2, Info, RefreshCw, Mail, Smartphone, Zap, Clock, MousePointerClick, MessageCircle, TrendingUp, Plus, Eye } from 'lucide-react';
-import { Prospect, CampaignStatus } from '../types';
+import { Client, Prospect, CampaignStatus } from '../types';
 import { findProspects, generateOutreachScript, calculateLocalScore, ProspectScore } from '../services/geminiService';
-import { saveProspectToDB, fetchSavedProspects, deleteProspectFromDB, triggerMakeWebhook, updateProspectCampaign } from '../services/supabase';
+import { saveProspectToDB, fetchSavedProspects, deleteProspectFromDB, triggerMakeWebhook, updateProspectCampaign, convertProspectToClient } from '../services/supabase';
 import AddProspectModal from './AddProspectModal';
 import ConversationHistory from './ConversationHistory';
 
@@ -203,6 +203,8 @@ interface LeadFinderProps {
   setSavedProspects: React.Dispatch<React.SetStateAction<Prospect[]>>;
   onSaveProspect?: (prospect: Prospect) => Promise<Prospect | null>;
   onRemoveProspect?: (id: string) => Promise<boolean>;
+  onConvertToClient?: (prospect: Prospect) => Promise<Client | null>;
+  usingMockData?: boolean;
 }
 
 const LeadFinder: React.FC<LeadFinderProps> = ({
@@ -211,7 +213,9 @@ const LeadFinder: React.FC<LeadFinderProps> = ({
   results, setResults,
   savedProspects, setSavedProspects,
   onSaveProspect,
-  onRemoveProspect
+  onRemoveProspect,
+  onConvertToClient,
+  usingMockData = false
 }) => {
   const [activeTab, setActiveTab] = useState<'search' | 'saved'>('search');
   const [isLoading, setIsLoading] = useState(false);
@@ -398,6 +402,30 @@ const LeadFinder: React.FC<LeadFinderProps> = ({
 
     setResults(updateFn);
     setSavedProspects(updateFn);
+
+    // If converted, trigger the database conversion to Client
+    if (status === 'Converted') {
+      // Find the prospect to get its full data
+      const prospect = (activeTab === 'search' ? results : savedProspects).find(p => p.id === id);
+      if (prospect) {
+        const updatedProspect = {
+          ...prospect,
+          campaignStatus: status,
+          campaignStep: step,
+          campaignLogs: [...(prospect.campaignLogs || []), ...newLogs]
+        };
+
+        if (onConvertToClient) {
+          onConvertToClient(updatedProspect).then(dbClient => {
+            if (dbClient) {
+              console.log(`[Auto-Pilot] Successfully converted prospect to client: ${dbClient.businessName}`);
+            }
+          }).catch(err => {
+            console.error('[Auto-Pilot] Conversion error:', err);
+          });
+        }
+      }
+    }
   };
 
   // --- ACTIONS ---
@@ -693,14 +721,17 @@ const LeadFinder: React.FC<LeadFinderProps> = ({
         <AddProspectModal
           onClose={() => setShowAddProspectModal(false)}
           onAddProspect={(prospect, launchCampaign) => {
-            // First add to saved prospects (without Active status, we'll set it via handleLaunchCampaign)
-            const prospectToAdd = { ...prospect, campaignStatus: 'Idle' as CampaignStatus };
+            // First add to saved prospects
+            const prospectToAdd = { ...prospect, campaignStatus: launchCampaign ? 'Active' : 'Idle' as CampaignStatus };
             setSavedProspects(prev => [...prev, prospectToAdd]);
             setResults(prev => [...prev, prospectToAdd]);
 
+            // Persist to DB immediately
+            saveProspectToDB(prospectToAdd).catch(console.warn);
+
             // If campaign should launch, trigger the full campaign flow
             if (launchCampaign) {
-              // Use setTimeout to ensure state is updated first
+              // Note: handleLaunchCampaign also saves to DB, which is redundant but safe
               setTimeout(() => {
                 handleLaunchCampaign(prospectToAdd);
               }, 100);

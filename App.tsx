@@ -151,8 +151,12 @@ function App() {
     clients,
     loading: clientsLoading,
     usingMockData,
+    addClient,
     updateClient: updateClientInDB,
     removeClient,
+    addLeadToClient,
+    bookAppointmentForLead,
+    convertToClient,
   } = useClients();
 
   // Get selected client from the clients array
@@ -245,6 +249,8 @@ function App() {
               client={selectedClient}
               onBack={handleBackToDirectory}
               onUpdateClient={handleUpdateClient}
+              onAddLead={(lead) => addLeadToClient(selectedClient.id, lead)}
+              onBookAppointment={(leadId, date) => bookAppointmentForLead(selectedClient.id, leadId, date)}
             />
           );
         }
@@ -263,6 +269,9 @@ function App() {
             setSavedProspects={setSavedProspects}
             onSaveProspect={handleSaveProspect}
             onRemoveProspect={removeProspect}
+            onAddClient={addClient}
+            onConvertToClient={convertToClient}
+            usingMockData={usingMockData}
           />
         );
 

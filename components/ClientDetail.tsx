@@ -10,9 +10,11 @@ interface ClientDetailProps {
     client: Client;
     onBack: () => void;
     onUpdateClient: (client: Client) => void;
+    onAddLead: (lead: Omit<Lead, 'id'>) => Promise<Lead | null>;
+    onBookAppointment: (leadId: string, date: string) => Promise<void>;
 }
 
-const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateClient }) => {
+const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateClient, onAddLead, onBookAppointment }) => {
     // Admin view: simulator for testing, leads for overview, config for settings, growth for outreach
     const [activeTab, setActiveTab] = useState<'leads' | 'simulator' | 'config' | 'growth'>('leads');
 
@@ -63,12 +65,8 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateCli
         setBookingDate(dateString);
     };
 
-    const handleConfirmBooking = (leadId: string) => {
-        const updatedLeads = localLeads.map(l =>
-            l.id === leadId ? { ...l, status: 'Booked' as const, bookingDate: bookingDate } : l
-        );
-        setLocalLeads(updatedLeads);
-        onUpdateClient({ ...client, leads: updatedLeads });
+    const handleConfirmBooking = async (leadId: string) => {
+        await onBookAppointment(leadId, bookingDate);
         setBookingLeadId(null);
         setBookingDate('');
     };
@@ -667,13 +665,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateCli
                     clientNiche={client.niche}
                     onClose={() => setShowAddLeadModal(false)}
                     onAddLead={async (leadData) => {
-                        const newLead: Lead = {
-                            ...leadData,
-                            id: `lead_${Date.now()}`
-                        };
-                        const updatedLeads = [...localLeads, newLead];
-                        setLocalLeads(updatedLeads);
-                        onUpdateClient({ ...client, leads: updatedLeads });
+                        await onAddLead(leadData);
                         setShowAddLeadModal(false);
                     }}
                 />
@@ -697,9 +689,8 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateCli
                         services: [client.niche, 'General Inquiry', 'Emergency Service'],
                     }}
                     onClose={() => setShowAICallSimulator(false)}
-                    onLeadCaptured={(lead) => {
-                        const newLead: Lead = {
-                            id: `lead_${Date.now()}`,
+                    onLeadCaptured={async (lead) => {
+                        const newLead = await onAddLead({
                             name: lead.name,
                             phone: lead.phone,
                             serviceType: 'AI Call Inquiry',
@@ -707,10 +698,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateCli
                             status: 'New',
                             dateCaptured: new Date().toISOString().split('T')[0],
                             conversationHistory: [{ role: 'system', content: lead.notes, timestamp: new Date().toISOString() }]
-                        };
-                        const updatedLeads = [...localLeads, newLead];
-                        setLocalLeads(updatedLeads);
-                        onUpdateClient({ ...client, leads: updatedLeads });
+                        });
                     }}
                 />
             )}

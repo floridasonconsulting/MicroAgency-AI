@@ -17,7 +17,8 @@ import {
     NumberRequest,
     fetchPendingNumberRequests,
     createNumberRequest,
-    processNumberRequest
+    processNumberRequest,
+    convertProspectToClient
 } from '../services/supabase';
 import { MOCK_CLIENTS } from '../constants';
 
@@ -117,6 +118,49 @@ export function useClients() {
         return true;
     }, [usingMockData]);
 
+    const addLeadToClient = useCallback(async (clientId: string, lead: Omit<Lead, 'id'>) => {
+        if (usingMockData) {
+            const newLead: Lead = {
+                ...lead,
+                id: `mock-lead-${Date.now()}`,
+            };
+            setClients(prev => prev.map(c => c.id === clientId ? { ...c, leads: [newLead, ...c.leads] } : c));
+            return newLead;
+        }
+
+        const newLead = await createLeadDB(clientId, lead);
+        if (newLead) {
+            setClients(prev => prev.map(c => c.id === clientId ? { ...c, leads: [newLead, ...c.leads] } : c));
+        }
+        return newLead;
+    }, [usingMockData]);
+
+    const bookAppointmentForLead = useCallback(async (clientId: string, leadId: string, date: string) => {
+        const updates = { status: 'Booked' as const, bookingDate: date };
+
+        // Update local state
+        setClients(prev => prev.map(c => {
+            if (c.id !== clientId) return c;
+            return {
+                ...c,
+                leads: c.leads.map(l => l.id === leadId ? { ...l, ...updates } : l)
+            };
+        }));
+
+        if (!usingMockData) {
+            await updateLeadDB(leadId, updates);
+        }
+    }, [usingMockData]);
+
+    const convertToClient = useCallback(async (prospect: Prospect) => {
+        const newClient = await convertProspectToClient(prospect);
+        if (newClient) {
+            // Update local state
+            setClients(prev => [{ ...newClient, leads: [] }, ...prev]);
+        }
+        return newClient;
+    }, []);
+
     return {
         clients,
         loading,
@@ -126,6 +170,9 @@ export function useClients() {
         addClient,
         updateClient: updateClientState,
         removeClient,
+        addLeadToClient,
+        bookAppointmentForLead,
+        convertToClient,
     };
 }
 

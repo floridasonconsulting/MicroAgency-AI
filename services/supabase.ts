@@ -893,3 +893,73 @@ export async function markAllNotificationsRead(clientId: string): Promise<boolea
   return true;
 }
 
+/**
+ * Convert a prospect to a full client/subscriber
+ */
+export const convertProspectToClient = async (prospectOrId: Prospect | string): Promise<Client | null> => {
+  const sb = getSupabase();
+  let prospect: Prospect | null = null;
+
+  if (typeof prospectOrId === 'string') {
+    if (sb) {
+      const { data, error } = await sb
+        .from('prospects')
+        .select('*')
+        .eq('id', prospectOrId)
+        .single();
+      if (!error && data) {
+        prospect = mapDbProspectToProspect(data);
+      }
+    }
+  } else {
+    prospect = prospectOrId;
+  }
+
+  if (!prospect) {
+    console.error('Error: Prospect not found for conversion');
+    return null;
+  }
+
+  // 2. Map prospect to client data
+  const newClientData: Omit<Client, 'id' | 'leads'> = {
+    businessName: prospect.businessName,
+    ownerName: 'Business Owner', // Prospect doesn't have ownerName
+    email: prospect.email || `contact@${prospect.businessName.toLowerCase().replace(/\s+/g, '')}.com`,
+    phone: prospect.phone || '',
+    niche: 'Service Business', // Prospect doesn't have niche field
+    status: 'Active',
+    subscriptionTier: '$197/mo',
+    mrr: 197,
+    avatar: `https://picsum.photos/seed/${prospect.id}/200`,
+    joinedDate: new Date().toISOString().split('T')[0],
+    config: {
+      enabled: true,
+      businessName: prospect.businessName,
+      niche: 'Service Business',
+      customGreeting: `Thanks for contacting ${prospect.businessName}. How can we help you?`,
+      qualificationQuestions: ['Service needed?', 'Location?', 'Urgency?'],
+      voiceEnabled: false
+    }
+  };
+
+  if (!sb) {
+    // In demo mode, return a mocked client with a temp ID
+    return {
+      ...newClientData,
+      id: `mock-client-${Date.now()}`,
+      leads: []
+    };
+  }
+
+  // 3. Create the client record
+  const newClient = await createClientRecord(newClientData);
+  if (!newClient) return null;
+
+  // 4. Update prospect status to converted
+  await sb
+    .from('prospects')
+    .update({ campaign_status: 'converted' })
+    .eq('id', prospect.id);
+
+  return newClient;
+};
