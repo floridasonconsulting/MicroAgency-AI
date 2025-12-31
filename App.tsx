@@ -347,7 +347,7 @@ function App() {
         onLogout={() => {
           setAuthUser(null);
           setSelectedClientId(null);
-          setActiveView('dashboard');
+          setActiveView('login');
         }}
         onUpdateClient={handleUpdateClient}
       />

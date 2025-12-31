@@ -12,9 +12,10 @@ import {
     LayoutDashboard, Calendar, Phone, MessageSquare, Settings,
     LogOut, Bell, User, TrendingUp,
     CheckCircle, Mic, CreditCard, BarChart3,
-    PhoneIncoming, PhoneOutgoing, X, Sparkles
+    PhoneIncoming, PhoneOutgoing, X, Sparkles, MessageCircle
 } from 'lucide-react';
 import VoiceDemoModal from './VoiceDemoModal';
+import SMSDemoModal from './SMSDemoModal';
 
 // ============================================================================
 // MOCK HVAC DATA
@@ -221,6 +222,7 @@ interface DemoPortalProps {
 const DemoPortal: React.FC<DemoPortalProps> = ({ niche, onExit }) => {
     const [activeTab, setActiveTab] = useState<PortalTab>('dashboard');
     const [showVoiceDemo, setShowVoiceDemo] = useState(false);
+    const [showSMSDemo, setShowSMSDemo] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
 
     // Use HVAC data (can be extended for other niches)
@@ -285,8 +287,8 @@ const DemoPortal: React.FC<DemoPortalProps> = ({ niche, onExit }) => {
                             key={item.id}
                             onClick={() => setActiveTab(item.id as PortalTab)}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id
-                                    ? 'bg-indigo-50 text-indigo-700'
-                                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                ? 'bg-indigo-50 text-indigo-700'
+                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                                 }`}
                         >
                             <item.icon size={18} />
@@ -337,6 +339,13 @@ const DemoPortal: React.FC<DemoPortalProps> = ({ niche, onExit }) => {
                         </h1>
                         <div className="flex items-center gap-4">
                             <button
+                                onClick={() => setShowSMSDemo(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-200 transition-colors"
+                            >
+                                <MessageCircle size={16} />
+                                Test SMS AI
+                            </button>
+                            <button
                                 onClick={() => setShowVoiceDemo(true)}
                                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
                             >
@@ -375,6 +384,14 @@ const DemoPortal: React.FC<DemoPortalProps> = ({ niche, onExit }) => {
                 <VoiceDemoModal
                     client={client as any}
                     onClose={() => setShowVoiceDemo(false)}
+                />
+            )}
+
+            {/* SMS Demo Modal */}
+            {showSMSDemo && (
+                <SMSDemoModal
+                    client={client as any}
+                    onClose={() => setShowSMSDemo(false)}
                 />
             )}
         </div>
@@ -439,8 +456,8 @@ const DemoPortal: React.FC<DemoPortalProps> = ({ niche, onExit }) => {
                             {client.leads.slice(0, 5).map(lead => (
                                 <div key={lead.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${lead.status === 'Booked' ? 'bg-green-100 text-green-600' :
-                                            lead.status === 'New' ? 'bg-blue-100 text-blue-600' :
-                                                'bg-slate-100 text-slate-600'
+                                        lead.status === 'New' ? 'bg-blue-100 text-blue-600' :
+                                            'bg-slate-100 text-slate-600'
                                         }`}>
                                         {lead.status === 'Booked' ? <CheckCircle size={18} /> : <User size={18} />}
                                     </div>
@@ -449,8 +466,8 @@ const DemoPortal: React.FC<DemoPortalProps> = ({ niche, onExit }) => {
                                         <p className="text-xs text-slate-500">{lead.serviceType}</p>
                                     </div>
                                     <span className={`text-xs px-2 py-1 rounded-full ${lead.status === 'Booked' ? 'bg-green-100 text-green-700' :
-                                            lead.status === 'New' ? 'bg-blue-100 text-blue-700' :
-                                                'bg-slate-100 text-slate-600'
+                                        lead.status === 'New' ? 'bg-blue-100 text-blue-700' :
+                                            'bg-slate-100 text-slate-600'
                                         }`}>
                                         {lead.status}
                                     </span>
@@ -507,8 +524,8 @@ const DemoPortal: React.FC<DemoPortalProps> = ({ niche, onExit }) => {
                         <div key={call.id} className="bg-white rounded-xl border border-slate-200 p-5">
                             <div className="flex items-start gap-4">
                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${call.type === 'missed' ? 'bg-red-100 text-red-600' :
-                                        call.urgency === 'Emergency' ? 'bg-amber-100 text-amber-600' :
-                                            'bg-green-100 text-green-600'
+                                    call.urgency === 'Emergency' ? 'bg-amber-100 text-amber-600' :
+                                        'bg-green-100 text-green-600'
                                     }`}>
                                     {call.type === 'missed' ? <PhoneOutgoing size={20} /> : <PhoneIncoming size={20} />}
                                 </div>
@@ -595,8 +612,8 @@ const DemoPortal: React.FC<DemoPortalProps> = ({ niche, onExit }) => {
                                 {convo.messages.map((msg, i) => (
                                     <div key={i} className={`flex ${msg.from === 'ai' ? 'justify-end' : 'justify-start'}`}>
                                         <div className={`max-w-[80%] px-3 py-2 rounded-xl text-sm ${msg.from === 'ai'
-                                                ? 'bg-indigo-600 text-white rounded-br-none'
-                                                : 'bg-white border border-slate-200 rounded-bl-none'
+                                            ? 'bg-indigo-600 text-white rounded-br-none'
+                                            : 'bg-white border border-slate-200 rounded-bl-none'
                                             }`}>
                                             <p>{msg.text}</p>
                                             <p className={`text-xs mt-1 ${msg.from === 'ai' ? 'text-indigo-200' : 'text-slate-400'}`}>
