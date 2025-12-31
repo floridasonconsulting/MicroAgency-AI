@@ -125,6 +125,48 @@ export const analyzeLeadIntent = async (conversation: Message[]): Promise<{ urge
   }
 };
 
+export const generateConfigAssist = async (niche: string, businessName: string): Promise<{ greeting: string, questions: string[] }> => {
+  if (!apiKey) return {
+    greeting: `Thanks for contacting ${businessName}. How can we help you?`,
+    questions: ["What service do you need?", "When do you need it?", "What is your location?"]
+  };
+
+  const prompt = `
+    Generate configuration for an AI receptionist for a "${niche}" business named "${businessName}".
+    
+    1. Write a short, friendly greeting (under 2 sentences).
+    2. Generate 3 specific qualification questions to ask leads.
+    
+    Return JSON:
+    {
+      "greeting": "...",
+      "questions": ["...", "...", "..."]
+    }
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: "application/json" }
+    });
+
+    const text = response.text || "{}";
+    const json = JSON.parse(text);
+
+    return {
+      greeting: json.greeting || `Thanks for calling ${businessName}. How can I help?`,
+      questions: Array.isArray(json.questions) ? json.questions.slice(0, 5) : ["Service needed?", "Timeline?", "Location?"]
+    };
+  } catch (error) {
+    console.error("Gemini Config Gen Error:", error);
+    return {
+      greeting: `Thanks for calling ${businessName}. How can I help?`,
+      questions: ["Service needed?", "Timeline?", "Location?"]
+    };
+  }
+};
+
 // --- PROSPECTOR (New) ---
 
 export const findProspects = async (niche: string, location: string): Promise<Prospect[]> => {

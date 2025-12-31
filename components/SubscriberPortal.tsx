@@ -12,7 +12,7 @@ import {
     LayoutDashboard, Calendar, Phone, MessageSquare, Settings,
     LogOut, Bell, User, ChevronDown, TrendingUp, Clock,
     CheckCircle, AlertCircle, Mic, CreditCard, BarChart3,
-    PhoneIncoming, PhoneOutgoing, Users, ArrowUpRight
+    PhoneIncoming, PhoneOutgoing, Users, ArrowUpRight, Volume2, Sparkles
 } from 'lucide-react';
 import { Lead, Client } from '../types';
 import { signOut, AuthUser } from '../services/authService';
@@ -25,6 +25,7 @@ import {
     ClientCalendarSettings
 } from '../services/appointmentService';
 import VoiceDemoModal from './VoiceDemoModal';
+import { generateConfigAssist } from '../services/geminiService';
 
 // ============================================================================
 // TYPES
@@ -36,13 +37,14 @@ interface SubscriberPortalProps {
     user: AuthUser | null;
     client: Client;
     onLogout: () => void;
+    onUpdateClient: (client: Client) => void;
 }
 
 // ============================================================================
 // COMPONENT
 // ============================================================================
 
-const SubscriberPortal: React.FC<SubscriberPortalProps> = ({ user, client, onLogout }) => {
+const SubscriberPortal: React.FC<SubscriberPortalProps> = ({ user, client, onLogout, onUpdateClient }) => {
     const [activeTab, setActiveTab] = useState<PortalTab>('dashboard');
     const [showVoiceDemo, setShowVoiceDemo] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
@@ -605,61 +607,153 @@ const SubscriberPortal: React.FC<SubscriberPortalProps> = ({ user, client, onLog
     // SETTINGS TAB
     // ============================================================================
     function renderSettings() {
+        const [localConfig, setLocalConfig] = useState(client.config);
+        const [isGenerating, setIsGenerating] = useState(false);
+
+        const handleSave = () => {
+            onUpdateClient({ ...client, config: localConfig });
+        };
+
+        const handleAIGenerate = async () => {
+            setIsGenerating(true);
+            const aiConfig = await generateConfigAssist(client.niche, client.businessName);
+            setLocalConfig(prev => ({
+                ...prev,
+                customGreeting: aiConfig.greeting,
+                voiceGreeting: aiConfig.greeting,
+                qualificationQuestions: aiConfig.questions
+            }));
+            setIsGenerating(false);
+        };
+
         return (
             <div className="space-y-6">
                 <div className="bg-white rounded-xl border border-slate-200 p-6">
-                    <h3 className="font-bold text-slate-900 mb-4">AI Receptionist Settings</h3>
-
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Business Name</label>
-                            <input
-                                type="text"
-                                defaultValue={client.businessName}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">AI Greeting</label>
-                            <textarea
-                                defaultValue={`Thanks for calling ${client.businessName}. How can I help you today?`}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2"
-                                rows={3}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Voice</label>
-                            <select className="w-full border border-slate-300 rounded-lg px-3 py-2">
-                                <option>Alloy (Default)</option>
-                                <option>Echo</option>
-                                <option>Shimmer</option>
-                            </select>
-                        </div>
-
-                        <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700">
-                            Save Changes
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="font-bold text-slate-900">AI Receptionist Configuration</h3>
+                        <button
+                            onClick={handleAIGenerate}
+                            disabled={isGenerating}
+                            className="text-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-1.5 rounded-lg font-medium hover:opacity-90 flex items-center gap-2 disabled:opacity-50"
+                        >
+                            <Sparkles size={16} />
+                            {isGenerating ? 'Analyzing...' : 'Auto-Generate with AI'}
                         </button>
                     </div>
-                </div>
 
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                    <h3 className="font-bold text-slate-900 mb-4">Notification Preferences</h3>
+                    <div className="space-y-8 max-w-2xl">
+                        {/* --- VOICE SETTINGS --- */}
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <div className={`p-2 rounded-lg ${localConfig.voiceEnabled ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500'}`}>
+                                        <Mic size={20} />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-slate-900">AI Voice Receptionist</h4>
+                                        <p className="text-xs text-slate-500">Answer incoming calls with generative voice AI.</p>
+                                    </div>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={localConfig.voiceEnabled || false}
+                                        onChange={(e) => setLocalConfig({ ...localConfig, voiceEnabled: e.target.checked })}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
 
-                    <div className="space-y-3">
-                        <label className="flex items-center gap-3">
-                            <input type="checkbox" defaultChecked className="w-5 h-5 text-indigo-600 rounded" />
-                            <span>Email me when a new lead is captured</span>
-                        </label>
-                        <label className="flex items-center gap-3">
-                            <input type="checkbox" defaultChecked className="w-5 h-5 text-indigo-600 rounded" />
-                            <span>SMS alert for emergency calls</span>
-                        </label>
-                        <label className="flex items-center gap-3">
-                            <input type="checkbox" defaultChecked className="w-5 h-5 text-indigo-600 rounded" />
-                            <span>Daily summary email</span>
-                        </label>
+                            {localConfig.voiceEnabled ? (
+                                <div className="space-y-4 pl-2 border-l-2 border-indigo-100 ml-4 animate-in fade-in">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Voice Persona</label>
+                                        <div className="flex gap-2">
+                                            {['Alloy', 'Echo', 'Shimmer'].map((voice) => (
+                                                <button
+                                                    key={voice}
+                                                    onClick={() => setLocalConfig({ ...localConfig, voiceId: voice.toLowerCase() })}
+                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border ${localConfig.voiceId === voice.toLowerCase()
+                                                        ? 'border-indigo-500 bg-white text-indigo-700 ring-1 ring-indigo-500'
+                                                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                                                        }`}
+                                                >
+                                                    <Volume2 size={14} />
+                                                    {voice}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Spoken Greeting</label>
+                                        <textarea
+                                            className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                            rows={2}
+                                            value={localConfig.voiceGreeting || ''}
+                                            onChange={(e) => setLocalConfig({ ...localConfig, voiceGreeting: e.target.value })}
+                                        />
+                                        <p className="text-[10px] text-slate-400 mt-1">The AI will speak this first when answering a call.</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-sm text-slate-500 italic pl-2 border-l-2 border-slate-200 ml-4">
+                                    Voice is disabled. Calls will be rejected or sent to voicemail, triggering the <strong>Missed Call Auto-Text</strong> below.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* --- SMS SETTINGS --- */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <MessageSquare size={16} className="text-slate-400" />
+                                <label className="block text-sm font-bold text-slate-900">Missed Call Auto-Text</label>
+                            </div>
+                            <p className="text-xs text-slate-500 mb-2">Sent immediately when a call is missed or after the Voice AI hangs up.</p>
+                            <textarea
+                                className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                rows={3}
+                                value={localConfig.customGreeting}
+                                onChange={(e) => setLocalConfig({ ...localConfig, customGreeting: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-slate-900 mb-1">Qualification Questions</label>
+                            <p className="text-xs text-slate-500 mb-2">The AI (Voice or Text) will ask these to qualify the lead.</p>
+                            <div className="space-y-2">
+                                {localConfig.qualificationQuestions.map((q, i) => (
+                                    <div key={i} className="flex gap-2">
+                                        <span className="bg-slate-100 text-slate-500 px-3 py-2 rounded-lg text-sm font-mono">{i + 1}</span>
+                                        <input
+                                            type="text"
+                                            value={q}
+                                            onChange={(e) => {
+                                                const newQuestions = [...localConfig.qualificationQuestions];
+                                                newQuestions[i] = e.target.value;
+                                                setLocalConfig({ ...localConfig, qualificationQuestions: newQuestions });
+                                            }}
+                                            className="flex-1 border border-slate-300 rounded-lg px-3 text-sm"
+                                        />
+                                    </div>
+                                ))}
+                                <button
+                                    onClick={() => setLocalConfig({ ...localConfig, qualificationQuestions: [...localConfig.qualificationQuestions, ""] })}
+                                    className="text-sm text-indigo-600 font-medium hover:underline"
+                                >
+                                    + Add Question
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-slate-100 flex justify-end">
+                            <button
+                                onClick={handleSave}
+                                className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                            >
+                                Save Configuration
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -269,7 +269,6 @@ function App() {
             setSavedProspects={setSavedProspects}
             onSaveProspect={handleSaveProspect}
             onRemoveProspect={removeProspect}
-            onAddClient={addClient}
             onConvertToClient={convertToClient}
             usingMockData={usingMockData}
           />
@@ -350,6 +349,7 @@ function App() {
           setSelectedClientId(null);
           setActiveView('dashboard');
         }}
+        onUpdateClient={handleUpdateClient}
       />
     );
   }

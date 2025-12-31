@@ -181,28 +181,10 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateCli
                 <div className="w-full lg:w-64 flex flex-col gap-4">
                     <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2">
                         <button
-                            onClick={() => setActiveTab('simulator')}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'simulator' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                        >
-                            <Play size={18} /> Simulator (Demo)
-                        </button>
-                        <button
                             onClick={() => setActiveTab('leads')}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'leads' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
                             <Users size={18} /> Captured Leads
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('config')}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'config' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                        >
-                            <Settings size={18} /> AI Configuration
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('growth')}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'growth' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                        >
-                            <Bot size={18} /> Growth Tools
                         </button>
                     </div>
 
@@ -244,74 +226,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateCli
                 {/* Main Content Area */}
                 <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
 
-                    {/* --- SIMULATOR TAB --- */}
-                    {activeTab === 'simulator' && (
-                        <div className="flex flex-col h-full">
-                            <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                                <div>
-                                    <h3 className="font-bold text-slate-900">Live Simulator</h3>
-                                    <p className="text-xs text-slate-500">Test the auto-reply logic as if you were a customer.</p>
-                                </div>
-                                <button
-                                    onClick={() => setSimHistory([{ role: 'system', content: 'SYSTEM: Inbound Lead Detected via SMS.', timestamp: 'Now' }])}
-                                    className="text-xs text-slate-400 hover:text-slate-600"
-                                >
-                                    Reset Chat
-                                </button>
-                            </div>
 
-                            <div className="flex-1 p-6 overflow-y-auto bg-slate-100" ref={scrollRef}>
-                                <div className="max-w-md mx-auto space-y-4">
-                                    {simHistory.map((msg, idx) => (
-                                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                            <div className={`
-                                        max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm
-                                        ${msg.role === 'user'
-                                                    ? 'bg-blue-500 text-white rounded-br-none'
-                                                    : msg.role === 'system'
-                                                        ? 'bg-slate-200 text-slate-500 text-xs text-center w-full shadow-none'
-                                                        : 'bg-white text-slate-800 rounded-bl-none border border-slate-200'}
-                                    `}>
-                                                {msg.role === 'assistant' && <div className="text-xs text-slate-400 mb-1 font-bold">{client.businessName} AI</div>}
-                                                {msg.content}
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {isTyping && (
-                                        <div className="flex justify-start">
-                                            <div className="bg-white text-slate-800 rounded-2xl rounded-bl-none border border-slate-200 px-4 py-3 shadow-sm">
-                                                <span className="flex gap-1">
-                                                    <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                                                    <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                                                    <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="p-4 bg-white border-t border-slate-100">
-                                <div className="max-w-md mx-auto relative flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={simInput}
-                                        onChange={(e) => setSimInput(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                        placeholder="Type a message as a customer (e.g., 'Do you fix leaks?')"
-                                        className="flex-1 border border-slate-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                                    />
-                                    <button
-                                        onClick={handleSendMessage}
-                                        disabled={!simInput.trim() || isTyping}
-                                        className="bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                                    >
-                                        <Send size={18} />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {/* --- LEADS TAB --- */}
                     {activeTab === 'leads' && (
@@ -412,162 +327,7 @@ const ClientDetail: React.FC<ClientDetailProps> = ({ client, onBack, onUpdateCli
                         </div>
                     )}
 
-                    {/* --- CONFIG TAB --- */}
-                    {activeTab === 'config' && (
-                        <div className="p-6 h-full overflow-y-auto">
-                            <h3 className="font-bold text-slate-900 mb-6 border-b border-slate-100 pb-2">Automation Configuration</h3>
 
-                            <div className="space-y-8 max-w-2xl">
-
-                                {/* --- VOICE SETTINGS (NEW) --- */}
-                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className={`p-2 rounded-lg ${config.voiceEnabled ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-500'}`}>
-                                                <Mic size={20} />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-slate-900">AI Voice Receptionist</h4>
-                                                <p className="text-xs text-slate-500">Answer incoming calls with generative voice AI.</p>
-                                            </div>
-                                        </div>
-                                        <label className="relative inline-flex items-center cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={config.voiceEnabled || false}
-                                                onChange={(e) => handleConfigChange('voiceEnabled', e.target.checked)}
-                                                className="sr-only peer"
-                                            />
-                                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                                        </label>
-                                    </div>
-
-                                    {config.voiceEnabled ? (
-                                        <div className="space-y-4 pl-2 border-l-2 border-indigo-100 ml-4 animate-in fade-in">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Voice Persona</label>
-                                                <div className="flex gap-2">
-                                                    {['Alloy', 'Echo', 'Shimmer'].map((voice) => (
-                                                        <button
-                                                            key={voice}
-                                                            onClick={() => handleConfigChange('voiceId', voice.toLowerCase())}
-                                                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border ${config.voiceId === voice.toLowerCase()
-                                                                ? 'border-indigo-500 bg-white text-indigo-700 ring-1 ring-indigo-500'
-                                                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                                                                }`}
-                                                        >
-                                                            <Volume2 size={14} />
-                                                            {voice}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Spoken Greeting</label>
-                                                <textarea
-                                                    className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                                                    rows={2}
-                                                    value={config.voiceGreeting || `Thanks for calling ${client.businessName}. This is our automated assistant. How can I help?`}
-                                                    onChange={(e) => handleConfigChange('voiceGreeting', e.target.value)}
-                                                />
-                                                <p className="text-[10px] text-slate-400 mt-1">The AI will speak this first when answering a call.</p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="text-sm text-slate-500 italic pl-2 border-l-2 border-slate-200 ml-4">
-                                            Voice is disabled. Calls will be rejected or sent to voicemail, triggering the <strong>Missed Call Auto-Text</strong> below.
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* --- SMS SETTINGS --- */}
-                                <div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <MessageSquare size={16} className="text-slate-400" />
-                                        <label className="block text-sm font-bold text-slate-900">Missed Call Auto-Text</label>
-                                    </div>
-                                    <p className="text-xs text-slate-500 mb-2">Sent immediately when a call is missed or after the Voice AI hangs up.</p>
-                                    <textarea
-                                        className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                                        rows={3}
-                                        value={config.customGreeting}
-                                        onChange={(e) => handleConfigChange('customGreeting', e.target.value)}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-900 mb-1">Qualification Questions</label>
-                                    <p className="text-xs text-slate-500 mb-2">The AI (Voice or Text) will ask these to qualify the lead.</p>
-                                    <div className="space-y-2">
-                                        {config.qualificationQuestions.map((q, i) => (
-                                            <div key={i} className="flex gap-2">
-                                                <span className="bg-slate-100 text-slate-500 px-3 py-2 rounded-lg text-sm font-mono">{i + 1}</span>
-                                                <input
-                                                    type="text"
-                                                    value={q}
-                                                    onChange={(e) => {
-                                                        const newQuestions = [...config.qualificationQuestions];
-                                                        newQuestions[i] = e.target.value;
-                                                        handleConfigChange('qualificationQuestions', newQuestions);
-                                                    }}
-                                                    className="flex-1 border border-slate-300 rounded-lg px-3 text-sm"
-                                                />
-                                            </div>
-                                        ))}
-                                        <button className="text-sm text-indigo-600 font-medium hover:underline">+ Add Question</button>
-                                    </div>
-                                </div>
-
-                                <div className="pt-4 border-t border-slate-100 flex justify-end">
-                                    <button className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
-                                        Save Configuration
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* --- GROWTH TAB --- */}
-                    {activeTab === 'growth' && (
-                        <div className="p-6 h-full overflow-y-auto">
-                            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-6 text-white mb-6">
-                                <h3 className="text-xl font-bold mb-2">Client Acquisition Engine</h3>
-                                <p className="opacity-90">Use AI to generate scripts to sell this {client.niche} setup to similar businesses.</p>
-                            </div>
-
-                            <div className="border border-slate-200 rounded-xl p-6 bg-slate-50">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h4 className="font-bold text-slate-900">Cold Outreach Script Generator</h4>
-                                    <button
-                                        onClick={handleGenerateOutreach}
-                                        disabled={generatingScript}
-                                        className="bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
-                                    >
-                                        {generatingScript ? 'Generating...' : 'Generate New Script'}
-                                    </button>
-                                </div>
-
-                                {outreachScript ? (
-                                    <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm relative group">
-                                        <pre className="whitespace-pre-wrap font-sans text-sm text-slate-700 leading-relaxed">
-                                            {outreachScript}
-                                        </pre>
-                                        <button
-                                            onClick={() => navigator.clipboard.writeText(outreachScript)}
-                                            className="absolute top-2 right-2 p-2 bg-slate-100 text-slate-500 rounded hover:bg-slate-200 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            title="Copy"
-                                        >
-                                            <Copy size={16} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-8 text-slate-400 text-sm">
-                                        Click generate to create a custom sales script for {client.niche} businesses.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
 
