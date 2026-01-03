@@ -71,7 +71,7 @@ export interface CommunicationConfig {
 // ============================================================================
 
 const DEFAULT_CONFIG: CommunicationConfig = {
-    systemEmailDomain: 'mail.microagency.ai',
+    systemEmailDomain: 'mail.recepticom.com',
     systemEmailPrefix: 'reply',
     enableAIResponses: true,
     escalationKeywords: ['human', 'person', 'manager', 'owner', 'call me', 'urgent', 'emergency'],
@@ -96,7 +96,7 @@ function generateUUID(): string {
 
 /**
  * Parse prospect ID from tagged email address
- * e.g., reply+abc123@mail.microagency.ai -> abc123
+ * e.g., reply+abc123@mail.recepticom.com -> abc123
  */
 function parseProspectIdFromEmail(email: string): string | null {
     const match = email.match(/reply\+([a-zA-Z0-9-]+)@/);
@@ -374,7 +374,7 @@ export async function sendSystemEmail(
 
     // TODO: Actually send via Resend
     // await resendService.sendEmail({
-    //   from: 'MicroAgency AI <leads@microagency.ai>',
+    //   from: 'Recepticom <leads@recepticom.com>',
     //   replyTo,
     //   to,
     //   subject,

@@ -53,7 +53,7 @@ const Layout: React.FC<LayoutProps> = ({
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-slate-800">
             <h1 className="text-xl font-bold bg-gradient-to-r from-primary-400 to-indigo-400 bg-clip-text text-transparent">
-              MicroAgency AI
+              Recepticom
             </h1>
             <p className="text-xs text-slate-500 mt-1">Autopilot Engine</p>
           </div>
@@ -117,7 +117,7 @@ const Layout: React.FC<LayoutProps> = ({
 
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3">
-          <span className="font-bold text-slate-900">MicroAgency AI</span>
+          <span className="font-bold text-slate-900">Recepticom</span>
           <div className="flex items-center gap-2">
             <NotificationBell
               unreadCount={unreadCount}

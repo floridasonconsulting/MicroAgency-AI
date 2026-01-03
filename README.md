@@ -1,7 +1,7 @@
 <div align="center">
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 
-# MicroAgency AI
+# Recepticom
 
 **AI-Powered Sales Automation Platform for Local Service Businesses**
 
@@ -16,7 +16,7 @@
 
 ## 📋 Overview
 
-MicroAgency AI is a comprehensive SaaS platform that enables agencies to offer AI-powered receptionist and lead capture services to local service businesses (plumbers, HVAC, roofers, etc.). The platform handles:
+Recepticom is a comprehensive SaaS platform that enables agencies to offer AI-powered receptionist and lead capture services to local service businesses (plumbers, HVAC, roofers, etc.). The platform handles:
 
 - 🤖 **AI Voice Receptionist** - 24/7 call answering with natural conversation
 - 💬 **AI SMS Responder** - Automated text message handling
@@ -63,8 +63,8 @@ MicroAgency AI is a comprehensive SaaS platform that enables agencies to offer A
 
 ```bash
 # Clone the repository
-git clone https://github.com/floridasonconsulting/MicroAgency-AI.git
-cd MicroAgency-AI
+git clone https://github.com/floridasonconsulting/Recepticom.git
+cd Recepticom
 
 # Install dependencies
 npm install
@@ -100,7 +100,7 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ## 📁 Project Structure
 
 ```
-MicroAgency-AI/
+Recepticom/
 ├── components/              # React components
 │   ├── Layout.tsx          # Main layout with navigation
 │   ├── Dashboard.tsx       # Agency overview
@@ -139,20 +139,20 @@ MicroAgency-AI/
 Prospect signs up → Stripe payment → Phone number provisioned → AI activated
                            │
                            ▼
-              ┌─────────────────────────┐
-              │   Onboarding Wizard     │
-              │  • Business details     │
-              │  • Niche selection      │
-              │  • Greeting config      │
-              │  • Number forwarding    │
-              └─────────────────────────┘
+               ┌─────────────────────────┐
+               │   Onboarding Wizard     │
+               │  • Business details     │
+               │  • Niche selection      │
+               │  • Greeting config      │
+               │  • Number forwarding    │
+               └─────────────────────────┘
 ```
 
 ### 2. AI Receptionist Flow
 
 ```
 Customer Call ──► Twilio ──► TwiML Webhook ──► AI Receptionist Service
-                                                       │
+                                                        │
                     ┌──────────────────────────────────┴─────────┐
                     ▼                                             ▼
            ┌───────────────┐                            ┌─────────────────┐
@@ -177,7 +177,7 @@ Customer Call ──► Twilio ──► TwiML Webhook ──► AI Receptionist
 
 ```
 Prospect Added ──► Campaign Launched ──► Step Executor
-                                              │
+                                               │
                     ┌─────────────────────────┼─────────────────────┐
                     ▼                         ▼                     ▼
              ┌──────────┐              ┌──────────┐          ┌──────────┐
@@ -199,7 +199,7 @@ Prospect Added ──► Campaign Launched ──► Step Executor
 ```
 OUTBOUND:
   Campaign/System ──► sendSystemEmail() ──► Customer
-                      (Reply-To: reply+{id}@mail.microagency.ai)
+                      (Reply-To: reply+{id}@mail.recepticom.com)
 
 INBOUND:
   Customer Reply ──► Webhook ──► handleInboundEmail/SMS()
@@ -362,8 +362,8 @@ vercel
 
 ### Docker
 ```bash
-docker build -t microagency-ai .
-docker run -p 3000:3000 microagency-ai
+docker build -t recepticom .
+docker run -p 3000:3000 recepticom
 ```
 
 ---

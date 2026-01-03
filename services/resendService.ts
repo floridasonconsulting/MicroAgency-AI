@@ -8,18 +8,18 @@
 // ============================================================================
 
 export interface EmailOptions {
-    to: string;
-    subject: string;
-    text?: string;
-    html?: string;
-    from?: string;
-    replyTo?: string;
+  to: string;
+  subject: string;
+  text?: string;
+  html?: string;
+  from?: string;
+  replyTo?: string;
 }
 
 export interface EmailResult {
-    success: boolean;
-    messageId?: string;
-    error?: string;
+  success: boolean;
+  messageId?: string;
+  error?: string;
 }
 
 // ============================================================================
@@ -29,25 +29,25 @@ export interface EmailResult {
 const RESEND_API_URL = 'https://api.resend.com/emails';
 
 function getApiKey(): string | null {
-    // Check localStorage for API key (set in Settings)
-    const settings = localStorage.getItem('agency_settings');
-    if (settings) {
-        const parsed = JSON.parse(settings);
-        if (parsed.resendApiKey) return parsed.resendApiKey;
-    }
+  // Check localStorage for API key (set in Settings)
+  const settings = localStorage.getItem('agency_settings');
+  if (settings) {
+    const parsed = JSON.parse(settings);
+    if (parsed.resendApiKey) return parsed.resendApiKey;
+  }
 
-    // Fallback to environment variable
-    // @ts-ignore
-    return import.meta.env?.VITE_RESEND_API_KEY || null;
+  // Fallback to environment variable
+  // @ts-ignore
+  return import.meta.env?.VITE_RESEND_API_KEY || null;
 }
 
 function getDefaultFromEmail(): string {
-    const settings = localStorage.getItem('agency_settings');
-    if (settings) {
-        const parsed = JSON.parse(settings);
-        if (parsed.emailFrom) return parsed.emailFrom;
-    }
-    return 'noreply@microagency.ai';
+  const settings = localStorage.getItem('agency_settings');
+  if (settings) {
+    const parsed = JSON.parse(settings);
+    if (parsed.emailFrom) return parsed.emailFrom;
+  }
+  return 'noreply@recepticom.com';
 }
 
 // ============================================================================
@@ -58,92 +58,92 @@ function getDefaultFromEmail(): string {
  * Send an email via Resend API
  */
 export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
-    const apiKey = getApiKey();
+  const apiKey = getApiKey();
 
-    if (!apiKey) {
-        console.error('[Resend] No API key configured');
-        return {
-            success: false,
-            error: 'Resend API key not configured. Add it in Settings > Integrations.'
-        };
-    }
-
-    const payload = {
-        from: options.from || getDefaultFromEmail(),
-        to: [options.to],
-        subject: options.subject,
-        text: options.text,
-        html: options.html,
-        reply_to: options.replyTo
+  if (!apiKey) {
+    console.error('[Resend] No API key configured');
+    return {
+      success: false,
+      error: 'Resend API key not configured. Add it in Settings > Integrations.'
     };
+  }
 
-    console.log('[Resend] Sending email:', {
-        to: options.to,
-        subject: options.subject
+  const payload = {
+    from: options.from || getDefaultFromEmail(),
+    to: [options.to],
+    subject: options.subject,
+    text: options.text,
+    html: options.html,
+    reply_to: options.replyTo
+  };
+
+  console.log('[Resend] Sending email:', {
+    to: options.to,
+    subject: options.subject
+  });
+
+  try {
+    const response = await fetch(RESEND_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
     });
 
-    try {
-        const response = await fetch(RESEND_API_URL, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
+    const data = await response.json();
 
-        const data = await response.json();
-
-        if (response.ok) {
-            console.log('[Resend] Email sent successfully:', data.id);
-            return {
-                success: true,
-                messageId: data.id
-            };
-        } else {
-            console.error('[Resend] API error:', data);
-            return {
-                success: false,
-                error: data.message || 'Failed to send email'
-            };
-        }
-    } catch (error) {
-        console.error('[Resend] Network error:', error);
-        return {
-            success: false,
-            error: error instanceof Error ? error.message : 'Network error'
-        };
+    if (response.ok) {
+      console.log('[Resend] Email sent successfully:', data.id);
+      return {
+        success: true,
+        messageId: data.id
+      };
+    } else {
+      console.error('[Resend] API error:', data);
+      return {
+        success: false,
+        error: data.message || 'Failed to send email'
+      };
     }
+  } catch (error) {
+    console.error('[Resend] Network error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error'
+    };
+  }
 }
 
 /**
  * Send a campaign outreach email
  */
 export async function sendCampaignEmail(
-    to: string,
-    subject: string,
-    body: string,
-    replyTo?: string
+  to: string,
+  subject: string,
+  body: string,
+  replyTo?: string
 ): Promise<EmailResult> {
-    return sendEmail({
-        to,
-        subject,
-        text: body,
-        replyTo: replyTo || getDefaultFromEmail()
-    });
+  return sendEmail({
+    to,
+    subject,
+    text: body,
+    replyTo: replyTo || getDefaultFromEmail()
+  });
 }
 
 /**
  * Send a demo link email
  */
 export async function sendDemoEmail(
-    to: string,
-    businessName: string,
-    demoLink: string
+  to: string,
+  businessName: string,
+  demoLink: string
 ): Promise<EmailResult> {
-    const subject = `Your personalized demo is ready - ${businessName}`;
+  const subject = `Your personalized demo is ready - ${businessName}`;
 
-    const html = `
+  const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #4F46E5;">Your AI Receptionist Demo is Ready!</h2>
       
@@ -177,31 +177,31 @@ export async function sendDemoEmail(
       <p>Have questions? Just reply to this email.</p>
       
       <p>Best,<br>
-      <strong>MicroAgency AI Team</strong></p>
+      <strong>Recepticom Team</strong></p>
     </div>
   `;
 
-    return sendEmail({
-        to,
-        subject,
-        html,
-        text: `Your AI Receptionist Demo is ready! View it here: ${demoLink}`
-    });
+  return sendEmail({
+    to,
+    subject,
+    html,
+    text: `Your AI Receptionist Demo is ready! View it here: ${demoLink}`
+  });
 }
 
 /**
  * Send onboarding welcome email
  */
 export async function sendWelcomeEmail(
-    to: string,
-    businessName: string,
-    aiPhoneNumber?: string
+  to: string,
+  businessName: string,
+  aiPhoneNumber?: string
 ): Promise<EmailResult> {
-    const subject = `Welcome to MicroAgency AI - ${businessName}`;
+  const subject = `Welcome to Recepticom - ${businessName}`;
 
-    const html = `
+  const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #10B981;">🎉 Welcome to MicroAgency AI!</h2>
+      <h2 style="color: #10B981;">🎉 Welcome to Recepticom!</h2>
       
       <p>Hi there,</p>
       
@@ -226,16 +226,16 @@ export async function sendWelcomeEmail(
       <p>Need help? Reply to this email or check out your dashboard.</p>
       
       <p>Best,<br>
-      <strong>MicroAgency AI Team</strong></p>
+      <strong>Recepticom Team</strong></p>
     </div>
   `;
 
-    return sendEmail({
-        to,
-        subject,
-        html,
-        text: `Welcome to MicroAgency AI! Your AI receptionist for ${businessName} is now active.${aiPhoneNumber ? ` Your AI phone number is: ${aiPhoneNumber}` : ''}`
-    });
+  return sendEmail({
+    to,
+    subject,
+    html,
+    text: `Welcome to Recepticom! Your AI receptionist for ${businessName} is now active.${aiPhoneNumber ? ` Your AI phone number is: ${aiPhoneNumber}` : ''}`
+  });
 }
 
 // ============================================================================
@@ -243,39 +243,39 @@ export async function sendWelcomeEmail(
 // ============================================================================
 
 export interface AppointmentEmailData {
-    customerEmail: string;
-    customerName: string;
-    businessName: string;
-    businessPhone: string;
-    scheduledAt: string;
-    durationMinutes: number;
-    serviceType?: string;
-    location?: string;
-    googleCalendarUrl: string;
-    outlookCalendarUrl: string;
-    icsDownloadUrl?: string;
+  customerEmail: string;
+  customerName: string;
+  businessName: string;
+  businessPhone: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  serviceType?: string;
+  location?: string;
+  googleCalendarUrl: string;
+  outlookCalendarUrl: string;
+  icsDownloadUrl?: string;
 }
 
 /**
  * Send appointment confirmation email to customer
  */
 export async function sendAppointmentConfirmation(data: AppointmentEmailData): Promise<EmailResult> {
-    const appointmentDate = new Date(data.scheduledAt);
-    const dateStr = appointmentDate.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-    });
-    const timeStr = appointmentDate.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    });
+  const appointmentDate = new Date(data.scheduledAt);
+  const dateStr = appointmentDate.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  });
+  const timeStr = appointmentDate.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
 
-    const subject = `Appointment Confirmed - ${dateStr} at ${timeStr}`;
+  const subject = `Appointment Confirmed - ${dateStr} at ${timeStr}`;
 
-    const html = `
+  const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: linear-gradient(to right, #10B981, #059669); padding: 20px; border-radius: 8px 8px 0 0;">
         <h2 style="color: white; margin: 0;">✓ Appointment Confirmed</h2>
@@ -336,37 +336,37 @@ export async function sendAppointmentConfirmation(data: AppointmentEmailData): P
     </div>
     `;
 
-    return sendEmail({
-        to: data.customerEmail,
-        subject,
-        html,
-        text: `Your appointment with ${data.businessName} is confirmed for ${dateStr} at ${timeStr}. ${data.serviceType ? `Service: ${data.serviceType}. ` : ''}Need to reschedule? Reply to this email or call ${data.businessPhone}.`
-    });
+  return sendEmail({
+    to: data.customerEmail,
+    subject,
+    html,
+    text: `Your appointment with ${data.businessName} is confirmed for ${dateStr} at ${timeStr}. ${data.serviceType ? `Service: ${data.serviceType}. ` : ''}Need to reschedule? Reply to this email or call ${data.businessPhone}.`
+  });
 }
 
 /**
  * Send appointment reminder email to customer (24h or 1h)
  */
 export async function sendAppointmentReminder(
-    data: AppointmentEmailData,
-    reminderType: '24h' | '1h'
+  data: AppointmentEmailData,
+  reminderType: '24h' | '1h'
 ): Promise<EmailResult> {
-    const appointmentDate = new Date(data.scheduledAt);
-    const dateStr = appointmentDate.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric'
-    });
-    const timeStr = appointmentDate.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    });
+  const appointmentDate = new Date(data.scheduledAt);
+  const dateStr = appointmentDate.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+  });
+  const timeStr = appointmentDate.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
 
-    const timeLabel = reminderType === '24h' ? 'tomorrow' : 'in 1 hour';
-    const subject = `Reminder: Your appointment ${timeLabel} - ${timeStr}`;
+  const timeLabel = reminderType === '24h' ? 'tomorrow' : 'in 1 hour';
+  const subject = `Reminder: Your appointment ${timeLabel} - ${timeStr}`;
 
-    const html = `
+  const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: linear-gradient(to right, #F59E0B, #D97706); padding: 20px; border-radius: 8px 8px 0 0;">
         <h2 style="color: white; margin: 0;">⏰ Appointment Reminder</h2>
@@ -407,19 +407,19 @@ export async function sendAppointmentReminder(
     </div>
     `;
 
-    return sendEmail({
-        to: data.customerEmail,
-        subject,
-        html,
-        text: `Reminder: Your appointment with ${data.businessName} is ${timeLabel} - ${dateStr} at ${timeStr}. ${data.serviceType ? `Service: ${data.serviceType}. ` : ''}Need to reschedule? Reply to this email or call ${data.businessPhone}.`
-    });
+  return sendEmail({
+    to: data.customerEmail,
+    subject,
+    html,
+    text: `Reminder: Your appointment with ${data.businessName} is ${timeLabel} - ${dateStr} at ${timeStr}. ${data.serviceType ? `Service: ${data.serviceType}. ` : ''}Need to reschedule? Reply to this email or call ${data.businessPhone}.`
+  });
 }
 
 export default {
-    sendEmail,
-    sendCampaignEmail,
-    sendDemoEmail,
-    sendWelcomeEmail,
-    sendAppointmentConfirmation,
-    sendAppointmentReminder
+  sendEmail,
+  sendCampaignEmail,
+  sendDemoEmail,
+  sendWelcomeEmail,
+  sendAppointmentConfirmation,
+  sendAppointmentReminder
 };

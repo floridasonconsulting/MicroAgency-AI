@@ -1,4 +1,4 @@
--- MicroAgency-AI Database Schema
+-- Recepticom Database Schema
 -- Run this in Supabase SQL Editor to initialize the database
 
 -- Enable UUID extension

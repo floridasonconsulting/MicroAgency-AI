@@ -1,7 +1,7 @@
 /**
  * Stripe Integration Service
  * 
- * This service handles Stripe payment integration for the MicroAgency-AI platform.
+ * This service handles Stripe payment integration for the Recepticom platform.
  * 
  * IMPORTANT: For production, Stripe operations that require the secret key 
  * (like creating checkout sessions) should be done via a backend/serverless function.

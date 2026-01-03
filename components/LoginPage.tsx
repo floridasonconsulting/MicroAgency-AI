@@ -91,7 +91,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigateToDemo 
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-white mb-2">
                         <span className="bg-gradient-to-r from-primary-400 to-indigo-400 bg-clip-text text-transparent">
-                            MicroAgency AI
+                            Recepticom
                         </span>
                     </h1>
                     <p className="text-slate-400">Subscriber Portal</p>
@@ -286,7 +286,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigateToDemo 
 
                 {/* Footer */}
                 <p className="text-center text-slate-500 text-sm mt-6">
-                    © 2024 MicroAgency AI. All rights reserved.
+                    © 2024 Recepticom. All rights reserved.
                 </p>
             </div>
         </div>

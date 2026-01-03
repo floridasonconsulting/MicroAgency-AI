@@ -109,12 +109,12 @@ export function generateICSContent(appointment: Appointment, businessName: strin
         return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     };
 
-    const uid = `${appointment.id}@microagency.ai`;
+    const uid = `${appointment.id}@recepticom.com`;
     const now = formatICSDate(new Date());
 
     return `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//MicroAgency AI//Appointment Booking//EN
+PRODID:-//Recepticom//Appointment Booking//EN
 CALSCALE:GREGORIAN
 METHOD:REQUEST
 BEGIN:VEVENT

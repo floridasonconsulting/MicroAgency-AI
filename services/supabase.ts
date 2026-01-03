@@ -590,7 +590,7 @@ export const triggerMakeWebhook = async (prospect: Prospect): Promise<boolean> =
     const payload = {
       ...prospect,
       timestamp: new Date().toISOString(),
-      source: 'MicroAgency_LeadFinder',
+      source: 'Recepticom_LeadFinder',
     };
     console.log('[Make.com Webhook] Payload:', JSON.stringify(payload, null, 2));
 

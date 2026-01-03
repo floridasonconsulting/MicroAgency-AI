@@ -12,7 +12,7 @@ interface AgencySettings {
 }
 
 const DEFAULT_SETTINGS: AgencySettings = {
-  agencyName: 'MicroAgency AI',
+  agencyName: 'Recepticom',
   ownerName: '',
   supportEmail: '',
   currency: 'USD',

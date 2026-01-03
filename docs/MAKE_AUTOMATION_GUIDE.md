@@ -2,7 +2,7 @@
 
 ## Overview
 
-MicroAgency-AI integrates with Make.com (formerly Integromat) to automate prospect outreach campaigns. When you click "Launch Campaign" on a prospect, the app sends a webhook to Make.com with prospect data.
+Recepticom integrates with Make.com (formerly Integromat) to automate prospect outreach campaigns. When you click "Launch Campaign" on a prospect, the app sends a webhook to Make.com with prospect data.
 
 **You need to create your own Make.com scenario** - this guide shows you how.
 
@@ -25,7 +25,7 @@ When a campaign is launched, the app sends this JSON to your webhook:
   "hasWebsite": false,
   "campaignStatus": "Active",
   "timestamp": "2024-12-26T13:00:00.000Z",
-  "source": "MicroAgency_LeadFinder"
+  "source": "Recepticom_LeadFinder"
 }
 ```
 
@@ -44,8 +44,8 @@ When a campaign is launched, the app sends this JSON to your webhook:
 1. Search for **"Webhooks"** module
 2. Select **"Custom webhook"**
 3. Click **"Create a webhook"**
-4. Name it: `MicroAgency Prospect Trigger`
-5. **Copy the webhook URL** - you'll paste this in MicroAgency settings
+4. Name it: `Recepticom Prospect Trigger`
+5. **Copy the webhook URL** - you'll paste this in Recepticom settings
 
 ### 3. Add Router for Multiple Actions
 
@@ -63,7 +63,7 @@ When a campaign is launched, the app sends this JSON to your webhook:
    - **Content**: 
    ```
    Hi {{1.businessName}},
-
+ 
    I noticed your business could benefit from never missing another call. 
    Our AI receptionist answers 24/7, books appointments, and follows up 
    automatically.
@@ -116,24 +116,24 @@ Add prospects to your CRM (HubSpot, Airtable, Google Sheets, etc.):
 
 ### JSON Blueprint for Import
 
-Save this as `microagency_scenario.json` and import in Make.com:
+Save this as `recepticom_scenario.json` and import in Make.com:
 
 ```json
 {
-  "name": "MicroAgency Prospect Automation",
+  "name": "Recepticom Prospect Automation",
   "flow": [
     {
       "id": 1,
       "module": "gateway:CustomWebHook",
       "version": 1,
       "parameters": {
-        "hook": "MicroAgency Prospect Trigger",
+        "hook": "Recepticom Prospect Trigger",
         "maxResults": 1
       },
       "mapper": {},
       "metadata": {
         "designer": { "x": 0, "y": 0 },
-        "restore": { "parameters": { "hook": { "label": "MicroAgency Prospect Trigger" }}}
+        "restore": { "parameters": { "hook": { "label": "Recepticom Prospect Trigger" }}}
       }
     },
     {
@@ -185,9 +185,9 @@ Save this as `microagency_scenario.json` and import in Make.com:
 
 ---
 
-## Configure in MicroAgency
+## Configure in Recepticom
 
-1. In MicroAgency, go to **Settings** → **API Integrations**
+1. In Recepticom, go to **Settings** → **API Integrations**
 2. Paste your Make.com webhook URL in **"Make.com Webhook"** field
 3. Click **Save Changes**
 4. Test by launching a campaign on any prospect
@@ -197,7 +197,7 @@ Save this as `microagency_scenario.json` and import in Make.com:
 ## Testing Your Scenario
 
 1. In Make.com, click **"Run once"** to arm the scenario
-2. In MicroAgency, find a prospect and click **"Launch Campaign"**
+2. In Recepticom, find a prospect and click **"Launch Campaign"**
 3. Check Make.com to see the data received
 4. Verify email/SMS was sent
 

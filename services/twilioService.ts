@@ -1,7 +1,7 @@
 /**
  * Twilio Integration Service
  * 
- * This service handles Twilio phone number provisioning for the MicroAgency-AI platform.
+ * This service handles Twilio phone number provisioning for the Recepticom platform.
  * 
  * IMPORTANT: For production, Twilio API calls should be made from a backend/serverless
  * function to protect your auth token. This client-side code is designed for demo
