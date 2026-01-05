@@ -403,7 +403,7 @@ async function generateVoiceResponse(
     }));
 
     // Check for Gemini API key
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const apiKey = (import.meta.env.VITE_GEMINI_API_KEY || '').trim();
 
     if (!apiKey) {
         console.warn('[AI Receptionist] Gemini API key not configured - using fallback response');
@@ -459,7 +459,7 @@ Business: ${context.businessName} (${context.niche})`;
         parts: [{ text: msg.content }],
     }));
 
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const apiKey = (import.meta.env.VITE_GEMINI_API_KEY || '').trim();
 
     if (!apiKey) {
         console.warn('[AI Receptionist] Gemini API key not configured - using fallback response');

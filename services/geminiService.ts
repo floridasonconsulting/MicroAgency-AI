@@ -2,7 +2,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { Client, Message, Prospect } from "../types";
 
-const apiKey = process.env.API_KEY || '';
+const apiKey = (import.meta.env.VITE_GEMINI_API_KEY || '').trim();
 const ai = new GoogleGenAI({ apiKey });
 
 // --- AGENT SIMULATION ---
@@ -44,7 +44,7 @@ export const simulateAutoResponder = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: systemPrompt,
     });
     return response.text || "I'm having trouble processing that.";
@@ -83,7 +83,7 @@ export const generateOutreachScript = async (niche: string, platform: string, pa
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: prompt,
     });
     return response.text || "Could not generate script.";
@@ -112,7 +112,7 @@ export const analyzeLeadIntent = async (conversation: Message[]): Promise<{ urge
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: prompt,
       config: { responseMimeType: "application/json" }
     });
@@ -146,7 +146,7 @@ export const generateConfigAssist = async (niche: string, businessName: string):
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: prompt,
       config: { responseMimeType: "application/json" }
     });
@@ -198,7 +198,7 @@ export const findProspects = async (niche: string, location: string): Promise<Pr
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: prompt,
       config: {
         tools: [{ googleMaps: {} }],
@@ -378,7 +378,7 @@ export const scoreProspect = async (prospect: Prospect, niche: string): Promise<
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: prompt,
       config: { responseMimeType: "application/json" }
     });
